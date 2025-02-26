@@ -34,6 +34,11 @@ defmodule HabitQuestWeb.Router do
     live "/children/new", ChildLive.Index, :new
     live "/children/:id/edit", ChildLive.Index, :edit
     live "/children/:id", ChildLive.Show, :show
+
+    # Reward management routes
+    live "/rewards", RewardLive.Index, :index
+    live "/rewards/new", RewardLive.Index, :new
+    live "/rewards/:id/edit", RewardLive.Index, :edit
   end
 
   # Other scopes may use custom stacks.

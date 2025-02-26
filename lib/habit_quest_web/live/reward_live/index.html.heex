@@ -1,0 +1,43 @@
+<.header>
+  Manage Rewards
+  <:actions>
+    <.link navigate={~p"/"}>
+      <.button>Home</.button>
+    </.link>
+    <.link patch={~p"/rewards/new"}>
+      <.button>New Reward</.button>
+    </.link>
+  </:actions>
+</.header>
+
+<.table
+  id="rewards"
+  rows={@streams.rewards}
+  row_click={fn {_id, reward} -> JS.navigate(~p"/rewards/#{reward}/edit") end}
+>
+  <:col :let={{_id, reward}} label="Name"><%= reward.name %></:col>
+  <:col :let={{_id, reward}} label="Description"><%= reward.description %></:col>
+  <:col :let={{_id, reward}} label="Cost"><%= reward.cost %> points</:col>
+  <:action :let={{id, reward}}>
+    <div class="sr-only">
+      <.link navigate={~p"/rewards/#{reward}/edit"}>Edit</.link>
+    </div>
+    <.link
+      phx-click={JS.push("delete", value: %{id: reward.id}) |> hide("##{id}")}
+      data-confirm="Are you sure?"
+    >
+      Delete
+    </.link>
+  </:action>
+</.table>
+
+<.modal :if={@live_action in [:new, :edit]} id="reward-modal" show on_cancel={JS.patch(~p"/rewards")}>
+  <.live_component
+    module={HabitQuestWeb.RewardLive.FormComponent}
+    id={@reward.id || :new}
+    title={@page_title}
+    action={@live_action}
+    reward={@reward}
+    patch={~p"/rewards"}
+  />
+</.modal>
