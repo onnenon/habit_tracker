@@ -13,6 +13,11 @@ defmodule HabitQuest.Children.Child do
       on_replace: :delete,
       on_delete: :delete_all
 
+    many_to_many :rewards, HabitQuest.Rewards.Reward,
+      join_through: HabitQuest.Rewards.ChildReward,
+      on_replace: :delete,
+      on_delete: :delete_all
+
     timestamps(type: :utc_datetime)
   end
 

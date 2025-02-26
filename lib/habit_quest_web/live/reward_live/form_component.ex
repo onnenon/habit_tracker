@@ -23,6 +23,25 @@ defmodule HabitQuestWeb.RewardLive.FormComponent do
         <.input field={@form[:description]} type="textarea" label="Description" />
         <.input field={@form[:cost]} type="number" label="Cost (points)" min="0" />
 
+        <div class="space-y-3">
+          <label class="block text-sm font-semibold leading-6 text-zinc-800">
+            Available to Children
+          </label>
+
+          <%= for {name, id} <- @children_options do %>
+            <label class="flex items-center gap-4 text-sm leading-6 text-zinc-600">
+              <input
+                type="checkbox"
+                name="reward[child_ids][]"
+                value={id}
+                checked={id in (@form[:child_ids].value || [])}
+                class="rounded border-zinc-300 text-zinc-900 focus:ring-0"
+              />
+              <%= name %>
+            </label>
+          <% end %>
+        </div>
+
         <:actions>
           <.button phx-disable-with="Saving...">Save Reward</.button>
         </:actions>
@@ -32,12 +51,18 @@ defmodule HabitQuestWeb.RewardLive.FormComponent do
   end
 
   @impl true
-  def update(%{reward: reward} = assigns, socket) do
+  def update(%{reward: reward, children: children} = assigns, socket) do
+    child_ids = Enum.map(reward.children, & &1.id)
+
     changeset = Rewards.change_reward(reward)
+    |> Ecto.Changeset.put_change(:child_ids, child_ids)
+
+    children_options = for child <- children, do: {child.name, child.id}
 
     {:ok,
      socket
      |> assign(assigns)
+     |> assign(:children_options, children_options)
      |> assign_form(changeset)}
   end
 
@@ -56,7 +81,8 @@ defmodule HabitQuestWeb.RewardLive.FormComponent do
   end
 
   defp save_reward(socket, :edit, reward_params) do
-    case Rewards.update_reward(socket.assigns.reward, reward_params) do
+    child_ids = ensure_integer_ids(reward_params["child_ids"] || [])
+    case Rewards.update_reward(socket.assigns.reward, reward_params, child_ids) do
       {:ok, reward} ->
         notify_parent({:saved, reward})
 
@@ -71,7 +97,8 @@ defmodule HabitQuestWeb.RewardLive.FormComponent do
   end
 
   defp save_reward(socket, :new, reward_params) do
-    case Rewards.create_reward(reward_params) do
+    child_ids = ensure_integer_ids(reward_params["child_ids"] || [])
+    case Rewards.create_reward(reward_params, child_ids) do
       {:ok, reward} ->
         notify_parent({:saved, reward})
 
@@ -90,4 +117,19 @@ defmodule HabitQuestWeb.RewardLive.FormComponent do
   end
 
   defp notify_parent(msg), do: send(self(), {__MODULE__, msg})
+
+  defp ensure_integer_ids(ids) when is_list(ids) do
+    Enum.map(ids, &safe_to_integer/1)
+    |> Enum.filter(&(&1 != nil))
+  end
+  defp ensure_integer_ids(_), do: []
+
+  defp safe_to_integer(val) when is_integer(val), do: val
+  defp safe_to_integer(val) when is_binary(val) do
+    case Integer.parse(val) do
+      {int, ""} -> int
+      _ -> nil
+    end
+  end
+  defp safe_to_integer(_), do: nil
 end
