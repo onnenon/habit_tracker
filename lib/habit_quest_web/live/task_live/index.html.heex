@@ -1,0 +1,44 @@
+<.header>
+  Manage Habits
+  <:actions>
+    <.link patch={~p"/tasks/new"}>
+      <.button>New Habit</.button>
+    </.link>
+  </:actions>
+</.header>
+
+<.table
+  id="tasks"
+  rows={@tasks}
+  row_click={fn task -> JS.navigate(~p"/tasks/#{task.id}/edit") end}
+>
+  <:col :let={task} label="Title"><%= task.title %></:col>
+  <:col :let={task} label="Description"><%= task.description %></:col>
+  <:col :let={task} label="Points"><%= task.points %> pts</:col>
+  <:col :let={task} label="Recurring">
+    <%= if task.recurring, do: "Yes", else: "No" %>
+  </:col>
+  <:action :let={task}>
+    <div class="sr-only">
+      <.link navigate={~p"/tasks/#{task.id}/edit"}>Edit</.link>
+    </div>
+    <.link
+      phx-click={JS.push("delete", value: %{id: task.id}) |> hide("##{task.id}")}
+      data-confirm="Are you sure?"
+    >
+      Delete
+    </.link>
+  </:action>
+</.table>
+
+<.modal :if={@live_action in [:new, :edit]} id="task-modal" show on_cancel={JS.patch(~p"/tasks")}>
+  <.live_component
+    module={HabitQuestWeb.TaskLive.FormComponent}
+    id={@task.id || :new}
+    title={@page_title}
+    action={@live_action}
+    task={@task}
+    children={@children}
+    patch={~p"/tasks"}
+  />
+</.modal>

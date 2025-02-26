@@ -1,0 +1,47 @@
+<div class="max-w-4xl mx-auto">
+  <.header>
+    Parent Dashboard
+    <:actions>
+      <.link navigate={~p"/children"} class="mr-4">
+        <.button>Manage Children</.button>
+      </.link>
+      <.link navigate={~p"/tasks"}>
+        <.button>Manage Habits</.button>
+      </.link>
+    </:actions>
+  </.header>
+
+  <.table
+    id="children"
+    rows={@children}
+    row_click={fn child -> JS.navigate(~p"/children/#{child}") end}
+  >
+    <:col :let={child} label="Name"><%= child.name %></:col>
+    <:col :let={child} label="Points"><%= child.points %></:col>
+    <:action :let={child}>
+      <div class="sr-only">
+        <.link navigate={~p"/children/#{child}"}>Show</.link>
+      </div>
+      <.link patch={~p"/parents/#{child}/edit"}>Edit</.link>
+    </:action>
+    <:action :let={child}>
+      <.link
+        phx-click={JS.push("delete", value: %{id: child.id}) |> hide("##{child.id}")}
+        data-confirm="Are you sure you want to delete this child?"
+      >
+        Delete
+      </.link>
+    </:action>
+  </.table>
+
+  <.modal :if={@live_action in [:new, :edit]} id="child-modal" show on_cancel={JS.patch(~p"/parents")}>
+    <.live_component
+      module={HabitQuestWeb.ParentLive.FormComponent}
+      id={@child.id || :new}
+      title={@page_title}
+      action={@live_action}
+      child={@child}
+      patch={~p"/parents"}
+    />
+  </.modal>
+</div>

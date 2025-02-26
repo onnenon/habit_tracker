@@ -1,0 +1,68 @@
+<.flash_group flash={@flash} />
+<div class="px-4 py-10 sm:px-6 sm:py-28 lg:px-8 xl:px-28 xl:py-32">
+  <div class="mx-auto max-w-xl lg:mx-0">
+    <h1 class="text-brand mt-10 flex items-center text-2xl font-bold leading-10">
+      HabitQuest
+      <small class="bg-brand/5 text-[0.8125rem] ml-3 rounded-full px-2 font-medium leading-6">
+        A habit tracking app for kids
+      </small>
+    </h1>
+    
+    <p class="text-[2rem] mt-4 font-semibold leading-10 tracking-tighter text-zinc-900 text-balance">
+      Help your children build good habits.
+    </p>
+    
+    <p class="mt-4 text-base leading-7 text-zinc-600">
+      Create habits, assign them to your children, and reward them as they complete tasks and earn points.
+    </p>
+    
+    <div class="mt-10">
+      <h2 class="text-xl font-semibold mb-4">Parent Dashboard</h2>
+      <div class="bg-white shadow overflow-hidden rounded-lg divide-y divide-gray-200">
+        <div class="px-6 py-5">
+          <div class="flex items-center justify-between">
+            <div>
+              <h3 class="text-lg font-medium text-gray-900">Manage Habits</h3>
+              <p class="mt-1 text-sm text-gray-500">Create and manage habits for your children</p>
+            </div>
+            <.link navigate={~p"/tasks"} class="bg-indigo-600 px-4 py-2 rounded-md text-white hover:bg-indigo-700">
+              Manage
+            </.link>
+          </div>
+        </div>
+        <div class="px-6 py-5">
+          <div class="flex items-center justify-between">
+            <div>
+              <h3 class="text-lg font-medium text-gray-900">Manage Children</h3>
+              <p class="mt-1 text-sm text-gray-500">Add and manage your children's profiles</p>
+            </div>
+            <.link navigate={~p"/children"} class="bg-indigo-600 px-4 py-2 rounded-md text-white hover:bg-indigo-700">
+              Manage
+            </.link>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="mt-10">
+      <h2 class="text-xl font-semibold mb-4">Children's Dashboards</h2>
+      <div id="children-list" class="space-y-4 mt-4" phx-update="append">
+        <%= for child <- @children do %>
+          <div class="bg-white shadow overflow-hidden rounded-lg" id={"child-#{child.id}"}>
+            <div class="px-6 py-5">
+              <div class="flex items-center justify-between">
+                <div>
+                  <h3 class="text-lg font-medium text-gray-900"><%= child.name %></h3>
+                  <p class="mt-1 text-sm text-gray-500">Age: <%= child.age %> | Points: <%= child.points %></p>
+                </div>
+                <.link navigate={~p"/children/#{child.id}"} class="bg-green-600 px-4 py-2 rounded-md text-white hover:bg-green-700">
+                  View Dashboard
+                </.link>
+              </div>
+            </div>
+          </div>
+        <% end %>
+      </div>
+    </div>
+  </div>
+</div>
