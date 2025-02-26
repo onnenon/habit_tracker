@@ -61,10 +61,13 @@ defmodule HabitQuestWeb.ChildLive.Show do
         task_completions = Tasks.list_task_completions_in_range(child.id, week_start, week_end)
 
         Children.award_points(child, task.points)
+        updated_child = Children.get_child!(child.id)
+
         {:noreply,
          socket
          |> assign(:task_completions, task_completions)
-         |> assign(:tasks, Tasks.list_tasks_for_child(child))
+         |> assign(:tasks, Tasks.list_tasks_for_child(updated_child))
+         |> assign(:child, updated_child)
          |> put_flash(:info, "Task completed successfully!")}
 
       {:ok, %{task: _updated_task}} ->
@@ -73,10 +76,13 @@ defmodule HabitQuestWeb.ChildLive.Show do
           Children.award_points(child, task.points)
         end
 
+        updated_child = Children.get_child!(child.id)
+
         {:noreply,
          socket
-         |> put_flash(:info, "Task progress updated!")
-         |> assign(:tasks, Tasks.list_tasks_for_child(child))}
+         |> assign(:child, updated_child)
+         |> assign(:tasks, Tasks.list_tasks_for_child(updated_child))
+         |> put_flash(:info, "Task progress updated!")}
 
       {:error, :future_date_not_allowed} ->
         {:noreply,
@@ -90,6 +96,7 @@ defmodule HabitQuestWeb.ChildLive.Show do
     end
   end
 
+  @impl true
   def handle_event("complete_task", %{"id" => task_id}, socket) do
     task = Tasks.get_task!(task_id)
     child = socket.assigns.child
@@ -102,10 +109,13 @@ defmodule HabitQuestWeb.ChildLive.Show do
         task_completions = Tasks.list_task_completions_in_range(child.id, week_start, week_end)
 
         Children.award_points(child, task.points)
+        updated_child = Children.get_child!(child.id)
+
         {:noreply,
          socket
          |> assign(:task_completions, task_completions)
-         |> assign(:tasks, Tasks.list_tasks_for_child(child))
+         |> assign(:tasks, Tasks.list_tasks_for_child(updated_child))
+         |> assign(:child, updated_child)
          |> put_flash(:info, "Task completed successfully!")}
 
       {:ok, %{task: _updated_task}} ->
@@ -114,10 +124,13 @@ defmodule HabitQuestWeb.ChildLive.Show do
           Children.award_points(child, task.points)
         end
 
+        updated_child = Children.get_child!(child.id)
+
         {:noreply,
          socket
-         |> put_flash(:info, "Task progress updated!")
-         |> assign(:tasks, Tasks.list_tasks_for_child(child))}
+         |> assign(:child, updated_child)
+         |> assign(:tasks, Tasks.list_tasks_for_child(updated_child))
+         |> put_flash(:info, "Task progress updated!")}
 
       {:error, _, changeset, _} ->
         {:noreply,
@@ -140,10 +153,13 @@ defmodule HabitQuestWeb.ChildLive.Show do
         week_end = socket.assigns.current_week.end
         task_completions = Tasks.list_task_completions_in_range(child.id, week_start, week_end)
 
+        updated_child = Children.get_child!(child.id)
+
         {:noreply,
          socket
          |> assign(:task_completions, task_completions)
-         |> assign(:child, Children.get_child!(child.id))
+         |> assign(:child, updated_child)
+         |> assign(:tasks, Tasks.list_tasks_for_child(updated_child))
          |> put_flash(:info, "Task completion removed successfully")}
 
       {:error, :not_found} ->

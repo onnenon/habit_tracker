@@ -141,6 +141,19 @@ defmodule HabitQuest.Tasks do
   end
 
   @doc """
+  Deletes a task completion record for a specific task, child, and date.
+  Returns {:ok, deleted_record} if successful, {:error, :not_found} if no matching record exists.
+  """
+  def delete_task_completion(task_id, child_id, date) do
+    query = TaskCompletion.completed_on_date?(task_id, child_id, date)
+
+    case Repo.one(query) do
+      nil -> {:error, :not_found}
+      completion -> Repo.delete(completion)
+    end
+  end
+
+  @doc """
   Returns an `%Ecto.Changeset{}` for tracking task changes.
   """
   def change_task(%Task{} = task, attrs \\ %{}) do

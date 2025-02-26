@@ -103,11 +103,8 @@
               full_day in (task.schedule_days || [])
             end) do %>
               <% 
-                # First check if the task_id exists in the map
                 task_completed = if Map.has_key?(@task_completions, task.id) do
-                  # Get the completions for this task
                   completions = @task_completions[task.id]
-                  # Compare dates properly - need to handle both Date objects and strings
                   date_str = if is_binary(date), do: date, else: Date.to_string(date)
                   Enum.any?(completions, fn completion_date -> 
                     comp_str = if is_binary(completion_date), do: completion_date, else: Date.to_string(completion_date)
@@ -116,32 +113,50 @@
                 else
                   false
                 end
+
+                is_future = Date.compare(date, Date.utc_today()) == :gt
               %>
               <div class={[
-                if task_completed do
-                  "bg-green-50 rounded-lg p-3 border border-green-100 transition-colors"
+                cond do
+                  task_completed -> "bg-green-50 rounded-lg p-3 border border-green-100 transition-colors"
+                  is_future -> "bg-gray-50/50 rounded-lg p-3 border border-gray-100 transition-colors opacity-95"
+                  true -> "bg-gray-50 rounded-lg p-3 border border-gray-200 transition-colors"
+                end,
+                # Make clickable if either it can be completed OR if it's already completed (for toggling)
+                if can_complete_task?(task, @child, date) or task_completed do
+                  "cursor-pointer hover:border-gray-300"
                 else
-                  "bg-gray-50 rounded-lg p-2 border border-gray-200 transition-colors"
+                  ""
                 end
-              ]}>
+              ]}
+              phx-click={
+                cond do
+                  task_completed -> "remove_task_completion"
+                  can_complete_task?(task, @child, date) -> "complete_task"
+                  true -> nil
+                end
+              }
+              phx-value-id={task.id}
+              phx-value-date={if is_binary(date), do: date, else: Date.to_string(date)}
+              >
                 <div class="flex justify-between items-start gap-2">
                   <div>
                     <h4 class={[
                       "font-medium",
-                      if task_completed do
-                        "text-xs text-green-700"
-                      else
-                        "text-xs text-gray-700"
+                      cond do
+                        task_completed -> "text-xs text-green-700"
+                        is_future -> "text-xs text-gray-400"
+                        true -> "text-xs text-gray-700"
                       end
                     ]}>
                       {task.title}
                     </h4>
                     <span class={[
                       "font-medium whitespace-nowrap text-xs",
-                      if task_completed do
-                        "text-green-600"
-                      else
-                        "text-gray-600"
+                      cond do
+                        task_completed -> "text-green-600"
+                        is_future -> "text-gray-400"
+                        true -> "text-gray-600"
                       end
                     ]}>
                       {task.points} pts
@@ -164,28 +179,18 @@
                       </svg>
                     </div>
                   <% else %>
-                    <%= cond do %>
-                      <% Date.compare(date, Date.utc_today()) == :gt -> %>
-                        <div></div>
-                      <% can_complete_task?(task, @child, date) -> %>
-                        <button
-                          phx-click="complete_task"
-                          phx-value-id={task.id}
-                          phx-value-date={if is_binary(date), do: date, else: Date.to_string(date)}
-                          class="rounded-full flex items-center justify-center p-2 hover:bg-gray-200 text-gray-500"
+                    <%= if can_complete_task?(task, @child, date) do %>
+                      <div class="rounded-full flex items-center justify-center p-2 text-gray-500">
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          viewBox="0 0 20 20"
+                          fill="none"
+                          stroke="currentColor"
+                          class="w-5 h-5"
                         >
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            viewBox="0 0 20 20"
-                            fill="none"
-                            stroke="currentColor"
-                            class="w-5 h-5"
-                          >
-                            <rect x="3" y="3" width="14" height="14" rx="2" stroke-width="2" />
-                          </svg>
-                        </button>
-                      <% true -> %>
-                        <div></div>
+                          <rect x="3" y="3" width="14" height="14" rx="2" stroke-width="2" />
+                        </svg>
+                      </div>
                     <% end %>
                   <% end %>
                 </div>
