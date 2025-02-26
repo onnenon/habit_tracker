@@ -6,7 +6,7 @@ defmodule HabitQuest.Tasks do
   import Ecto.Query, warn: false
   alias HabitQuest.Repo
 
-  alias HabitQuest.Tasks.{Task, TaskCompletion}
+  alias HabitQuest.Tasks.{Task, TaskCompletion, PunchCardCompletion}
   alias HabitQuest.Children.Child
 
   @doc """
@@ -64,7 +64,7 @@ defmodule HabitQuest.Tasks do
   def complete_task(%Task{} = task, %Child{} = child, completion_date \\ nil) do
     Ecto.Multi.new()
     |> maybe_create_task_completion(task, child, completion_date)
-    |> maybe_update_punch_card(task)
+    |> maybe_update_punch_card(task, child)
     |> Repo.transaction()
   end
 
@@ -89,24 +89,30 @@ defmodule HabitQuest.Tasks do
     end
   end
 
+  # For punch cards, we don't create completion records until fully completed
+  defp maybe_create_task_completion(multi, %Task{task_type: "punch_card"}, _child, _completion_date), do: multi
   defp maybe_create_task_completion(multi, _task, _child, _completion_date), do: multi
 
-  defp maybe_update_punch_card(multi, %Task{} = task) do
-    case task.task_type do
-      "punch_card" ->
-        new_completions = (task.current_completions || 0) + 1
-        attrs = if new_completions >= task.completions_required do
-          %{current_completions: 0}
-        else
-          %{current_completions: new_completions}
-        end
+  defp maybe_update_punch_card(multi, %Task{task_type: "punch_card"} = task, child) do
+    # Only count current completions, don't use PunchCardCompletion table yet
+    new_completions = (task.current_completions || 0) + 1
 
-        multi
-        |> Ecto.Multi.update(:task, Task.changeset(task, attrs))
-      _ ->
-        multi
+    if new_completions >= task.completions_required do
+      # When they complete the punch card, reset counter and create a completion record
+      multi
+      |> Ecto.Multi.insert(:punch_card_completion, %PunchCardCompletion{
+        task_id: task.id,
+        child_id: child.id,
+        completed_at: DateTime.utc_now() |> DateTime.truncate(:second)
+      })
+      |> Ecto.Multi.update(:task, Task.changeset(task, %{current_completions: 0}))
+    else
+      # Just increment the counter
+      multi
+      |> Ecto.Multi.update(:task, Task.changeset(task, %{current_completions: new_completions}))
     end
   end
+  defp maybe_update_punch_card(multi, _task, _child), do: multi
 
   def task_completed_today?(%Task{task_type: "weekly"} = task, child_id) do
     Repo.exists?(TaskCompletion.completed_today?(task.id, child_id))
@@ -189,6 +195,18 @@ defmodule HabitQuest.Tasks do
       _ ->
         :not_started
     end
+  end
+
+  @doc """
+  Returns the number of times a child has fully completed a punch card task
+  """
+  def count_punch_card_completions(task_id, child_id) do
+    from(pc in PunchCardCompletion,
+      where: pc.task_id == ^task_id and
+             pc.child_id == ^child_id,
+      select: count(pc.id)
+    )
+    |> Repo.one()
   end
 
   defp put_children(changeset, nil), do: changeset

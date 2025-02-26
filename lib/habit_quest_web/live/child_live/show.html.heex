@@ -22,35 +22,43 @@
               (if task.current_completions >= task.completions_required, do: "text-green-600", else: "text-purple-600")
             ]}><%= task.points %> pts</span>
           </div>
-          <p class="text-sm text-gray-600 mb-4"><%= task.description %></p>
-          <div class="flex gap-2 mb-4">
-            <%= for i <- 1..task.completions_required do %>
-              <div class={[
-                "w-6 h-6 rounded-full flex items-center justify-center border-2",
-                if i <= task.current_completions do
-                  "border-purple-600 bg-purple-600 text-white"
-                else
-                  "border-gray-300"
-                end
-              ]}>
-                <%= if i <= task.current_completions do %>
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 20 20"
-                    fill="currentColor"
-                    class="w-4 h-4"
-                  >
-                    <path
-                      fill-rule="evenodd"
-                      d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                      clip-rule="evenodd"
-                    />
-                  </svg>
-                <% else %>
-                  <span class="w-2 h-2 rounded-full bg-gray-300"></span>
-                <% end %>
-              </div>
-            <% end %>
+          <p class="text-sm text-gray-600 mb-2"><%= task.description %></p>
+          <div class="text-sm text-gray-500 mb-4">
+            Completed <%= Tasks.count_punch_card_completions(task.id, @child.id) %> times total
+          </div>
+          <div class="flex items-center justify-between mb-4">
+            <div class="flex gap-2">
+              <%= for i <- 1..task.completions_required do %>
+                <div class={[
+                  "w-6 h-6 rounded-full flex items-center justify-center border-2",
+                  if i <= task.current_completions do
+                    "border-purple-600 bg-purple-600 text-white"
+                  else
+                    "border-gray-300"
+                  end
+                ]}>
+                  <%= if i <= task.current_completions do %>
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 20 20"
+                      fill="currentColor"
+                      class="w-4 h-4"
+                    >
+                      <path
+                        fill-rule="evenodd"
+                        d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                        clip-rule="evenodd"
+                      />
+                    </svg>
+                  <% else %>
+                    <span class="w-2 h-2 rounded-full bg-gray-300"></span>
+                  <% end %>
+                </div>
+              <% end %>
+            </div>
+            <span class="text-sm font-medium text-gray-600">
+              <%= task.current_completions %> of <%= task.completions_required %> completed
+            </span>
           </div>
           <%= if can_complete_task?(task, @child) do %>
             <.button phx-click="complete_task" phx-value-id={task.id} class="w-full">
