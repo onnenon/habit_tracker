@@ -51,4 +51,13 @@ defmodule HabitQuest.Children do
   def change_child(%Child{} = child, attrs \\ %{}) do
     Child.changeset(child, attrs)
   end
+
+  @doc """
+  Awards points to a child and saves the updated points to the database.
+  """
+  def award_points(%Child{} = child, points) when is_integer(points) do
+    child
+    |> Child.changeset(%{points: child.points + points})
+    |> Repo.update()
+  end
 end

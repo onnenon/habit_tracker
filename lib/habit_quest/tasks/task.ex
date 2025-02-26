@@ -6,9 +6,13 @@ defmodule HabitQuest.Tasks.Task do
     field :description, :string
     field :title, :string
     field :points, :integer
+    field :task_type, :string, default: "one_off"  # one_off, punch_card, weekly
     field :recurring, :boolean, default: false
     field :recurring_interval, :integer
     field :recurring_period, :string
+    field :completions_required, :integer  # For punch card tasks
+    field :current_completions, :integer, default: 0  # For punch card tasks
+    field :schedule_days, {:array, :string}  # For weekly tasks
     field :child_ids, {:array, :integer}, virtual: true
 
     many_to_many :children, HabitQuest.Children.Child,
@@ -19,28 +23,73 @@ defmodule HabitQuest.Tasks.Task do
     timestamps(type: :utc_datetime)
   end
 
+  @task_types ~w(one_off punch_card weekly)
   @recurring_periods ~w(days weeks months)
+  @days_of_week ~w(monday tuesday wednesday thursday friday saturday sunday)
+
+  def task_type_options do
+    [
+      {"One-off Task", "one_off"},
+      {"Punch Card Task", "punch_card"},
+      {"Weekly Schedule", "weekly"}
+    ]
+  end
 
   def recurring_period_options do
     Enum.map(@recurring_periods, &{String.capitalize(&1), &1})
   end
 
+  def days_of_week_options do
+    Enum.map(@days_of_week, &{String.capitalize(&1), &1})
+  end
+
   @doc false
   def changeset(task, attrs) do
     task
-    |> cast(attrs, [:title, :description, :points, :recurring, :recurring_interval, :recurring_period, :child_ids])
-    |> validate_required([:title, :description, :points, :recurring])
-    |> validate_recurring_fields()
+    |> cast(attrs, [
+      :title,
+      :description,
+      :points,
+      :task_type,
+      :recurring,
+      :recurring_interval,
+      :recurring_period,
+      :completions_required,
+      :current_completions,
+      :schedule_days,
+      :child_ids
+    ])
+    |> validate_required([:title, :description, :points, :task_type])
+    |> validate_inclusion(:task_type, @task_types)
+    |> validate_task_type_fields()
   end
 
-  defp validate_recurring_fields(changeset) do
-    case get_field(changeset, :recurring) do
-      true ->
+  defp validate_task_type_fields(changeset) do
+    case get_field(changeset, :task_type) do
+      "punch_card" ->
         changeset
-        |> validate_required([:recurring_interval, :recurring_period])
-        |> validate_inclusion(:recurring_period, @recurring_periods)
-        |> validate_number(:recurring_interval, greater_than: 0)
+        |> validate_required([:completions_required])
+        |> validate_number(:completions_required, greater_than: 0)
+        |> validate_number(:current_completions, greater_than_or_equal_to: 0)
+
+      "weekly" ->
+        changeset
+        |> validate_required([:schedule_days])
+        |> validate_schedule_days()
+
       _ -> changeset
+    end
+  end
+
+  defp validate_schedule_days(changeset) do
+    case get_field(changeset, :schedule_days) do
+      nil -> changeset
+      days ->
+        if Enum.all?(days, &(&1 in @days_of_week)) do
+          changeset
+        else
+          add_error(changeset, :schedule_days, "invalid day of week")
+        end
     end
   end
 end
