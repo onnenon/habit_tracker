@@ -17,9 +17,6 @@ config :habit_quest, HabitQuestWeb.Endpoint,
   secret_key_base: "IiX/nJD9sI9B8HZY442tPf7znkiLwGEXaMTum0aZdlQFP4KKT/re4vlOI/KBCC9X",
   server: false
 
-# In test we don't send emails
-config :habit_quest, HabitQuest.Mailer, adapter: Swoosh.Adapters.Test
-
 # Disable swoosh api client as it is only required for production adapters
 config :swoosh, :api_client, false
 
