@@ -101,7 +101,7 @@
             <%= for task <- Enum.filter(@tasks, fn task -> 
               task.task_type == "weekly" && 
               full_day in (task.schedule_days || [])
-            end) do %>
+            end) |> Enum.sort_by(&{-&1.points, &1.title}) do %>
               <% 
                 task_completed = if Map.has_key?(@task_completions, task.id) do
                   completions = @task_completions[task.id]
