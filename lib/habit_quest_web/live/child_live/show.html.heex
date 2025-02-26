@@ -23,9 +23,6 @@
             ]}><%= task.points %> pts</span>
           </div>
           <p class="text-sm text-gray-600 mb-2"><%= task.description %></p>
-          <div class="text-sm text-gray-500 mb-4">
-            Completed <%= Tasks.count_punch_card_completions(task.id, @child.id) %> times total
-          </div>
           <div class="flex items-center justify-between mb-4">
             <div class="flex gap-2">
               <%= for i <- 1..task.completions_required do %>
@@ -56,9 +53,14 @@
                 </div>
               <% end %>
             </div>
-            <span class="text-sm font-medium text-gray-600">
-              <%= task.current_completions %> of <%= task.completions_required %> completed
-            </span>
+            <div class="text-sm text-gray-500">
+              <% completion_count = Tasks.count_punch_card_completions(task.id, @child.id) %>
+              <%= if completion_count > 0 do %>
+                Completed <%= completion_count %> times!
+              <% else %>
+                Completed <%= completion_count %> times total
+              <% end %>
+            </div>
           </div>
           <%= if can_complete_task?(task, @child) do %>
             <.button phx-click="complete_task" phx-value-id={task.id} class="w-full">
