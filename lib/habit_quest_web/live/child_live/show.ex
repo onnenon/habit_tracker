@@ -15,7 +15,6 @@ defmodule HabitQuestWeb.ChildLive.Show do
     # Get this week's task completions starting from Monday
     week_start = Date.utc_today() |> Date.beginning_of_week(:monday)
     week_end = Date.utc_today() |> Date.end_of_week(:monday)
-
     task_completions = Tasks.list_task_completions_in_range(child.id, week_start, week_end)
 
     {:ok,
@@ -24,7 +23,8 @@ defmodule HabitQuestWeb.ChildLive.Show do
      |> assign(:child, child)
      |> assign(:tasks, tasks)
      |> assign(:task_completions, task_completions)
-     |> assign(:current_week, %{start: week_start, end: week_end})}
+     |> assign(:current_week, %{start: week_start, end: week_end})
+     |> assign(:current_tab, "daily")} # Set default tab
   end
 
   @impl true
@@ -181,6 +181,11 @@ defmodule HabitQuestWeb.ChildLive.Show do
          socket
          |> put_flash(:error, "Task completion not found")}
     end
+  end
+
+  @impl true
+  def handle_event("change_tab", %{"tab" => tab}, socket) do
+    {:noreply, assign(socket, :current_tab, tab)}
   end
 
   def can_complete_task?(task, child, date \\ nil) do
