@@ -78,6 +78,11 @@ defmodule HabitQuestWeb.ChildLive.Show do
          |> put_flash(:info, "Task progress updated!")
          |> assign(:tasks, Tasks.list_tasks_for_child(child))}
 
+      {:error, :future_date_not_allowed} ->
+        {:noreply,
+         socket
+         |> put_flash(:error, "Tasks cannot be completed for future dates")}
+
       {:error, _, changeset, _} ->
         {:noreply,
          socket
@@ -121,18 +126,50 @@ defmodule HabitQuestWeb.ChildLive.Show do
     end
   end
 
+  @impl true
+  def handle_event("remove_task_completion", %{"id" => task_id, "date" => date}, socket) do
+    task = Tasks.get_task!(task_id)
+    child = socket.assigns.child
+    completion_date = Date.from_iso8601!(date)
+
+    case Tasks.delete_task_completion(task.id, child.id, completion_date) do
+      {:ok, _deleted} ->
+        # Deduct points and refresh task completions
+        Children.deduct_points(child, task.points)
+        week_start = socket.assigns.current_week.start
+        week_end = socket.assigns.current_week.end
+        task_completions = Tasks.list_task_completions_in_range(child.id, week_start, week_end)
+
+        {:noreply,
+         socket
+         |> assign(:task_completions, task_completions)
+         |> assign(:child, Children.get_child!(child.id))
+         |> put_flash(:info, "Task completion removed successfully")}
+
+      {:error, :not_found} ->
+        {:noreply,
+         socket
+         |> put_flash(:error, "Task completion not found")}
+    end
+  end
+
   def can_complete_task?(task, child, date \\ nil) do
     date = date || Date.utc_today()
 
-    case task.task_type do
-      "weekly" ->
-        day_name = date |> Date.day_of_week() |> day_number_to_name()
-        !Tasks.task_completed_on_date?(task, child.id, date) &&
-        day_name in (task.schedule_days || [])
-      "punch_card" ->
-        task.current_completions < task.completions_required
-      "one_off" ->
-        !task.completed
+    # First check if the date is in the future
+    if Date.compare(date, Date.utc_today()) == :gt do
+      false
+    else
+      case task.task_type do
+        "weekly" ->
+          day_name = date |> Date.day_of_week() |> day_number_to_name()
+          !Tasks.task_completed_on_date?(task, child.id, date) &&
+          day_name in (task.schedule_days || [])
+        "punch_card" ->
+          task.current_completions < task.completions_required
+        "one_off" ->
+          !task.completed
+      end
     end
   end
 

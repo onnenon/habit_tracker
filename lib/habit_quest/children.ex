@@ -60,4 +60,15 @@ defmodule HabitQuest.Children do
     |> Child.changeset(%{points: child.points + points})
     |> Repo.update()
   end
+
+  @doc """
+  Deducts points from a child and saves the updated points to the database.
+  Ensures points don't go below zero.
+  """
+  def deduct_points(%Child{} = child, points) when is_integer(points) do
+    new_points = max(0, child.points - points)
+    child
+    |> Child.changeset(%{points: new_points})
+    |> Repo.update()
+  end
 end
