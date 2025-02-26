@@ -17,7 +17,7 @@ defmodule HabitQuestWeb.ChildLive.Show do
     week_end = Date.utc_today() |> Date.end_of_week(:monday)
 
     task_completions = Tasks.list_task_completions_in_range(child.id, week_start, week_end)
-    IO.inspect(task_completions, label: "Task Completions")
+
     {:ok,
      socket
      |> assign(:page_title, child.name)
@@ -34,11 +34,17 @@ defmodule HabitQuestWeb.ChildLive.Show do
     |> Child.changeset(%{})
     |> Ecto.Changeset.apply_changes()
 
+    tasks = child.tasks
+    week_start = socket.assigns.current_week.start
+    week_end = socket.assigns.current_week.end
+    task_completions = Tasks.list_task_completions_in_range(child.id, week_start, week_end)
+
     {:noreply,
      socket
      |> assign(:page_title, "#{child.name}'s Dashboard")
      |> assign(:child, child)
-     |> assign(:tasks, child.tasks)}
+     |> assign(:tasks, tasks)
+     |> assign(:task_completions, task_completions)}
   end
 
   @impl true
@@ -54,11 +60,11 @@ defmodule HabitQuestWeb.ChildLive.Show do
         week_end = socket.assigns.current_week.end
         task_completions = Tasks.list_task_completions_in_range(child.id, week_start, week_end)
 
-        IO.inspect(task_completions, label: "Task Completions")
         Children.award_points(child, task.points)
         {:noreply,
          socket
          |> assign(:task_completions, task_completions)
+         |> assign(:tasks, Tasks.list_tasks_for_child(child))
          |> put_flash(:info, "Task completed successfully!")}
 
       {:ok, %{task: _updated_task}} ->
@@ -94,6 +100,7 @@ defmodule HabitQuestWeb.ChildLive.Show do
         {:noreply,
          socket
          |> assign(:task_completions, task_completions)
+         |> assign(:tasks, Tasks.list_tasks_for_child(child))
          |> put_flash(:info, "Task completed successfully!")}
 
       {:ok, %{task: _updated_task}} ->

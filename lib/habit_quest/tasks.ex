@@ -150,6 +150,34 @@ defmodule HabitQuest.Tasks do
     |> Task.changeset(attrs)
   end
 
+  @doc """
+  Returns the status of a task for a specific child.
+
+  Returns:
+    - :completed - Task is completed (for the day or fully completed for punch cards)
+    - :in_progress - Task is in progress (for punch cards only)
+    - :not_started - Task is not started
+  """
+  def get_task_status(%Task{} = task, child_id) do
+    case task.task_type do
+      "weekly" ->
+        if task_completed_today?(task, child_id), do: :completed, else: :not_started
+
+      "punch_card" ->
+        cond do
+          # Reset to 0 means it was just completed fully
+          task.current_completions == 0 and task.completions_required > 0 -> :completed
+          # In progress if there are some completions but not all required ones
+          task.current_completions > 0 -> :in_progress
+          # Not started yet
+          true -> :not_started
+        end
+
+      _ ->
+        :not_started
+    end
+  end
+
   defp put_children(changeset, nil), do: changeset
   defp put_children(changeset, child_ids) when is_list(child_ids) do
     # Ensure we're working with valid integer IDs
