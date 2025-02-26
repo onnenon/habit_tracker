@@ -1,7 +1,11 @@
 <div class="w-full px-4">
   <.header>
     <%= @child.name %>'s Dashboard
-    <:subtitle>Current Points: <%= @child.points %></:subtitle>
+    <:subtitle>
+      <span class="text-3xl font-bold transition-all duration-300 transform" id="points" phx-hook="Points">
+        Current Points: <%= @child.points %>
+      </span>
+    </:subtitle>
   </.header>
 
   <div class="mt-8">

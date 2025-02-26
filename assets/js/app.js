@@ -24,9 +24,35 @@ import topbar from "../vendor/topbar"
 import confetti from "canvas-confetti"
 
 let csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute("content")
+
+let Hooks = {}
+
+Hooks.Points = {
+  mounted() {
+    console.log("Points mounted")
+    this.prevPoints = parseInt(this.el.textContent.match(/\d+/)[0])
+  },
+  updated() {
+    console.log("Points updated")
+    const newPoints = parseInt(this.el.textContent.match(/\d+/)[0])
+    if (newPoints > this.prevPoints) {
+      this.el.classList.remove("text-green-400", "text-emerald-500")
+
+      // Add the highlight color
+      this.el.classList.add("text-green-600")
+      
+      setTimeout(() => {
+        this.el.classList.remove("text-green-600")
+      }, 2000) // Longer duration to be more visible
+    }
+    this.prevPoints = newPoints
+  }
+}
+
 let liveSocket = new LiveSocket("/live", Socket, {
   longPollFallbackMs: 2500,
-  params: { _csrf_token: csrfToken }
+  params: { _csrf_token: csrfToken },
+  hooks: Hooks
 })
 
 // Show progress bar on live navigation and form submits
