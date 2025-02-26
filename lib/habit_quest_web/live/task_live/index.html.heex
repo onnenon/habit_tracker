@@ -9,21 +9,29 @@
 
 <.table
   id="tasks"
-  rows={@tasks}
-  row_click={fn task -> JS.navigate(~p"/tasks/#{task.id}/edit") end}
+  rows={@streams.tasks}
+  row_click={fn {_id, task} -> JS.navigate(~p"/tasks/#{task.id}/edit") end}
 >
-  <:col :let={task} label="Title"><%= task.title %></:col>
-  <:col :let={task} label="Description"><%= task.description %></:col>
-  <:col :let={task} label="Points"><%= task.points %> pts</:col>
-  <:col :let={task} label="Recurring">
-    <%= if task.recurring, do: "Yes", else: "No" %>
+  <:col :let={{_id, task}} label="Title"><%= task.title %></:col>
+  <:col :let={{_id, task}} label="Description"><%= task.description %></:col>
+  <:col :let={{_id, task}} label="Points"><%= task.points %> pts</:col>
+  <:col :let={{_id, task}} label="Recurring">
+    <%= cond do %>
+      <% not task.recurring -> %>
+        No
+      <% true -> %>
+        Every <%= task.recurring_interval %> <%= task.recurring_period %>
+    <% end %>
   </:col>
-  <:action :let={task}>
+  <:col :let={{_id, task}} label="Assigned To">
+    <%= task.children |> Enum.map_join(", ", & &1.name) %>
+  </:col>
+  <:action :let={{id, task}}>
     <div class="sr-only">
       <.link navigate={~p"/tasks/#{task.id}/edit"}>Edit</.link>
     </div>
     <.link
-      phx-click={JS.push("delete", value: %{id: task.id}) |> hide("##{task.id}")}
+      phx-click={JS.push("delete", value: %{id: task.id}) |> hide("##{id}")}
       data-confirm="Are you sure?"
     >
       Delete

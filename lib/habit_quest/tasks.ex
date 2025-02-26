@@ -13,38 +13,46 @@ defmodule HabitQuest.Tasks do
   Returns the list of tasks.
   """
   def list_tasks do
-    Repo.all(Task)
+    Task
+    |> preload(:children)
+    |> Repo.all()
   end
 
   @doc """
   Gets tasks for a specific child.
   """
-  def list_tasks_for_child(%Child{id: child_id}) do
-    Task
-    |> where([t], t.child_id == ^child_id)
-    |> Repo.all()
+  def list_tasks_for_child(%Child{} = child) do
+    child
+    |> Repo.preload(:tasks)
+    |> Map.get(:tasks)
   end
 
   @doc """
   Gets a single task.
   """
-  def get_task!(id), do: Repo.get!(Task, id)
+  def get_task!(id) do
+    Task
+    |> Repo.get!(id)
+    |> Repo.preload(:children)
+  end
 
   @doc """
   Creates a task.
   """
-  def create_task(attrs \\ %{}) do
+  def create_task(attrs \\ %{}, child_ids \\ []) do
     %Task{}
     |> Task.changeset(attrs)
+    |> put_children(child_ids)
     |> Repo.insert()
   end
 
   @doc """
   Updates a task.
   """
-  def update_task(%Task{} = task, attrs) do
+  def update_task(%Task{} = task, attrs, child_ids \\ nil) do
     task
     |> Task.changeset(attrs)
+    |> put_children(child_ids)
     |> Repo.update()
   end
 
@@ -60,5 +68,11 @@ defmodule HabitQuest.Tasks do
   """
   def change_task(%Task{} = task, attrs \\ %{}) do
     Task.changeset(task, attrs)
+  end
+
+  defp put_children(changeset, nil), do: changeset
+  defp put_children(changeset, child_ids) when is_list(child_ids) do
+    children = Repo.all(from c in Child, where: c.id in ^child_ids)
+    Ecto.Changeset.put_assoc(changeset, :children, children)
   end
 end

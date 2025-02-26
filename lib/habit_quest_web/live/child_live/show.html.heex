@@ -1,50 +1,40 @@
-<div class="max-w-2xl mx-auto py-8 px-4">
+<div class="max-w-4xl mx-auto py-8 px-4">
   <.header>
-    <%= @child.name %>'s Habit Quest
+    <%= @child.name %>'s Dashboard
     <:subtitle>
-      <div class="text-lg mt-2">
-        Current Points: <span class="font-bold text-blue-600"><%= @child.points %></span>
-      </div>
+      <%= @child.age %> years old • <%= @child.points %> points
     </:subtitle>
   </.header>
 
   <div class="mt-8">
-    <h2 class="text-xl font-semibold mb-4">Your Current Habits</h2>
-    
-    <%= if Enum.empty?(@tasks) do %>
-      <div class="text-center p-8 bg-gray-100 rounded-lg">
-        <p class="text-gray-500">You don't have any habits assigned yet. Ask a parent to add some!</p>
-      </div>
-    <% else %>
-      <div class="space-y-4">
-        <%= for task <- @tasks do %>
-          <div class="bg-white shadow rounded-lg p-6 border-2 border-indigo-100">
-            <div class="flex justify-between items-start">
-              <div>
-                <h3 class="font-bold text-lg"><%= task.title %></h3>
-                <p class="text-gray-600 mt-1"><%= task.description %></p>
-                <div class="mt-2 inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
-                  <%= task.points %> points
-                </div>
-                <%= if task.recurring do %>
-                  <div class="mt-2 ml-2 inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
-                    Recurring
-                  </div>
-                <% end %>
+    <h2 class="text-xl font-semibold mb-4">Current Habits</h2>
+    <div class="grid grid-cols-1 gap-4">
+      <%= for task <- @tasks do %>
+        <div class="bg-white shadow rounded-lg p-6">
+          <div class="flex justify-between items-start">
+            <div>
+              <h3 class="font-bold text-lg"><%= task.title %></h3>
+              <p class="text-gray-600 mt-1"><%= task.description %></p>
+              <div class="mt-2 inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
+                <%= task.points %> points
               </div>
-              
-              <button 
-                phx-click="complete_task" 
-                phx-value-id={task.id} 
-                class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition"
-                data-confirm="Did you really complete this habit?"
-              >
-                Complete!
-              </button>
+              <%= if task.recurring do %>
+                <div class="mt-2 ml-2 inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
+                  Repeats every <%= task.recurring_interval %> <%= task.recurring_period %>
+                </div>
+              <% end %>
             </div>
+            
+            <button 
+              phx-click="complete_task" 
+              phx-value-id={task.id} 
+              class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition"
+            >
+              Complete
+            </button>
           </div>
-        <% end %>
-      </div>
-    <% end %>
+        </div>
+      <% end %>
+    </div>
   </div>
 </div>

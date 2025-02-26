@@ -3,6 +3,8 @@ defmodule HabitQuestWeb.ChildLive.Show do
 
   alias HabitQuest.Children
   alias HabitQuest.Tasks
+  alias HabitQuest.Tasks.Task
+  import Ecto.Query
 
   @impl true
   def mount(_params, _session, socket) do
@@ -12,18 +14,18 @@ defmodule HabitQuestWeb.ChildLive.Show do
   @impl true
   def handle_params(%{"id" => id}, _, socket) do
     child = Children.get_child!(id)
-    tasks = Tasks.list_tasks_for_child(child)
+    |> HabitQuest.Repo.preload([tasks: from(task in Task, order_by: [desc: task.inserted_at])])
 
     {:noreply,
      socket
      |> assign(:page_title, "#{child.name}'s Dashboard")
      |> assign(:child, child)
-     |> assign(:tasks, tasks)}
+     |> assign(:tasks, child.tasks)}
   end
 
   @impl true
   def handle_event("complete_task", %{"id" => task_id}, socket) do
-    task = Tasks.get_task!(task_id)
+    _task = Tasks.get_task!(task_id)
     child = socket.assigns.child
 
     # TODO: Implement task completion logic here

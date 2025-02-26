@@ -7,10 +7,13 @@ defmodule HabitQuestWeb.TaskLive.Index do
 
   @impl true
   def mount(_params, _session, socket) do
-    {:ok, assign(socket,
-      tasks: list_tasks(),
-      children: list_children()
-    )}
+    tasks = list_tasks()
+    children = list_children()
+
+    {:ok,
+     socket
+     |> stream(:tasks, tasks)
+     |> assign(:children, children)}
   end
 
   @impl true
@@ -21,7 +24,7 @@ defmodule HabitQuestWeb.TaskLive.Index do
   defp apply_action(socket, :new, _params) do
     socket
     |> assign(:page_title, "New Habit")
-    |> assign(:task, %Task{})
+    |> assign(:task, %Task{children: []})
   end
 
   defp apply_action(socket, :index, _params) do
@@ -31,9 +34,11 @@ defmodule HabitQuestWeb.TaskLive.Index do
   end
 
   defp apply_action(socket, :edit, %{"id" => id}) do
+    task = Tasks.get_task!(id)
+
     socket
     |> assign(:page_title, "Edit Habit")
-    |> assign(:task, Tasks.get_task!(id))
+    |> assign(:task, task)
   end
 
   @impl true
@@ -41,7 +46,12 @@ defmodule HabitQuestWeb.TaskLive.Index do
     task = Tasks.get_task!(id)
     {:ok, _} = Tasks.delete_task(task)
 
-    {:noreply, assign(socket, :tasks, list_tasks())}
+    {:noreply, stream_delete(socket, :tasks, task)}
+  end
+
+  @impl true
+  def handle_info({HabitQuestWeb.TaskLive.FormComponent, {:saved, task}}, socket) do
+    {:noreply, stream_insert(socket, :tasks, task)}
   end
 
   defp list_tasks do
