@@ -1,36 +1,175 @@
-<div class="max-w-4xl mx-auto py-8 px-4">
+<div class="w-full px-4">
   <.header>
     <%= @child.name %>'s Dashboard
     <:subtitle>Current Points: <%= @child.points %></:subtitle>
   </.header>
 
-  <.table
-    id="tasks"
-    rows={@tasks}
-  >
-    <:col :let={task} label="Title"><%= task.title %></:col>
-    <:col :let={task} label="Description"><%= task.description %></:col>
-    <:col :let={task} label="Points"><%= task.points %> pts</:col>
-    <:col :let={task} label="Status">
-      <%= case task.task_type do %>
-        <% "punch_card" -> %>
-          <%= task.current_completions %> / <%= task.completions_required %> completions
-        <% "weekly" -> %>
-          <%= if today_name() in (task.schedule_days || []) do %>
-            Available Today
-          <% else %>
-            Next available: <%= next_available_day(task.schedule_days) %>
+  <div class="mt-8">
+    <h2 class="text-xl font-semibold mb-4">Punch Card Tasks</h2>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <%= for task <- Enum.filter(@tasks, & &1.task_type == "punch_card") do %>
+        <div class="bg-white shadow rounded-lg p-4">
+          <div class="flex justify-between items-start mb-2">
+            <h3 class="text-lg font-medium"><%= task.title %></h3>
+            <span class="text-sm font-medium text-purple-600"><%= task.points %> pts</span>
+          </div>
+          <p class="text-sm text-gray-600 mb-4"><%= task.description %></p>
+          <div class="flex gap-2 mb-4">
+            <%= for i <- 1..task.completions_required do %>
+              <div class={[
+                "w-6 h-6 rounded-full flex items-center justify-center border-2",
+                if i <= task.current_completions do
+                  "border-purple-600 bg-purple-600 text-white"
+                else
+                  "border-gray-300"
+                end
+              ]}>
+                <%= if i <= task.current_completions do %>
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-4 h-4">
+                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                  </svg>
+                <% else %>
+                  <span class="w-2 h-2 rounded-full bg-gray-300"></span>
+                <% end %>
+              </div>
+            <% end %>
+          </div>
+          <%= if can_complete_task?(task, @child) do %>
+            <.button phx-click="complete_task" phx-value-id={task.id} class="w-full">
+              Complete
+            </.button>
           <% end %>
-        <% "one_off" -> %>
-          One time task
+        </div>
       <% end %>
-    </:col>
-    <:action :let={task}>
-      <%= if can_complete_task?(task) do %>
-        <.button phx-click="complete_task" phx-value-id={task.id}>
-          Complete
-        </.button>
+    </div>
+  </div>
+
+  <div class="mt-8">
+    <h2 class="text-xl font-semibold mb-6">Daily Tasks</h2>
+    <div class="grid grid-cols-7 xl:grid-cols-8">
+      <%= for {day, index} <- Enum.with_index(["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]) do %>
+        <% 
+          date = Date.add(@current_week.start, index)
+          is_today = Date.compare(date, Date.utc_today()) == :eq
+          full_day = case day do
+            "Mon" -> "monday"
+            "Tue" -> "tuesday"
+            "Wed" -> "wednesday"
+            "Thu" -> "thursday"
+            "Fri" -> "friday"
+            "Sat" -> "saturday"
+            "Sun" -> "sunday"
+          end
+        %>
+        <div class={[
+          "min-h-[200px] bg-white rounded-lg shadow-md overflow-hidden transition-all",
+          if(is_today, do: "xl:col-span-2 xl:row-span-2")
+        ]}>
+          <div class={[
+            "p-4 border-b border-gray-200",
+            if(is_today, do: "bg-purple-50", else: "bg-gray-50")
+          ]}>
+            <h3 class={[
+              "font-semibold text-center text-gray-800",
+              if(is_today, do: "text-lg", else: "text-base")
+            ]}>
+              <%= day %>
+              <div class="text-sm font-normal text-gray-500 mt-1"><%= Calendar.strftime(date, "%b %d") %></div>
+            </h3>
+          </div>
+          <div class="p-3 space-y-3 max-h-[500px] overflow-y-auto">
+            <%= for task <- Enum.filter(@tasks, fn task -> 
+              task.task_type == "weekly" && 
+              full_day in (task.schedule_days || [])
+            end) do %>
+              <div class={[
+                if is_today do
+                  "bg-purple-50 rounded-lg p-3 border border-purple-100 hover:border-purple-200 transition-colors"
+                else
+                  "bg-gray-50 rounded-lg p-2 border border-gray-200"
+                end
+              ]}>
+                <div class="flex justify-between items-start gap-2">
+                  <h4 class={[
+                    "font-medium",
+                    if(is_today, do: "text-sm text-purple-900", else: "text-xs text-gray-700")
+                  ]}><%= task.title %></h4>
+                  <span class={[
+                    "font-medium whitespace-nowrap",
+                    if(is_today, do: "text-xs text-purple-600", else: "text-xs text-gray-600")
+                  ]}><%= task.points %> pts</span>
+                </div>
+                <%= if task.id in Map.keys(@task_completions) && date in @task_completions[task.id] do %>
+                  <div class={[
+                    "w-full mt-2 text-xs py-2 text-center rounded-md border",
+                    if is_today do
+                      "text-green-700 bg-green-50 border-green-200"
+                    else
+                      "text-gray-600 bg-gray-50 border-gray-200 text-[10px]"
+                    end
+                  ]}>
+                    Completed
+                  </div>
+                <% else %>
+                  <%= if can_complete_task?(task, @child, date) do %>
+                    <.button 
+                      phx-click="complete_task" 
+                      phx-value-id={task.id} 
+                      class={"w-full mt-2 #{if(is_today, do: "text-xs py-2", else: "text-[10px] py-1")}"}
+                    >
+                      Complete
+                    </.button>
+                  <% else %>
+                    <%= if Date.compare(date, Date.utc_today()) == :gt do %>
+                      <div class={[
+                        "w-full mt-2 text-center rounded-md border",
+                        if is_today do
+                          "text-xs py-2 text-gray-500 bg-gray-50 border-gray-200"
+                        else
+                          "text-[10px] py-1 text-gray-400 bg-gray-50/50 border-gray-100"
+                        end
+                      ]}>
+                        Upcoming
+                      </div>
+                    <% end %>
+                  <% end %>
+                <% end %>
+              </div>
+            <% end %>
+          </div>
+        </div>
       <% end %>
-    </:action>
-  </.table>
+    </div>
+  </div>
+
+  <div class="mt-8">
+    <h2 class="text-xl font-semibold mb-4">Other Tasks</h2>
+    <.table
+      id="other-tasks"
+      rows={Enum.filter(@tasks, & &1.task_type == "one_off")}
+    >
+      <:col :let={task} label="Title"><%= task.title %></:col>
+      <:col :let={task} label="Description"><%= task.description %></:col>
+      <:col :let={task} label="Points"><%= task.points %> pts</:col>
+      <:col :let={task} label="Status">
+        <%= case task.task_type do %>
+          <% "weekly" -> %>
+            <%= if today_name() in (task.schedule_days || []) do %>
+              Available Today
+            <% else %>
+              Next available: <%= next_available_day(task.schedule_days) %>
+            <% end %>
+          <% "one_off" -> %>
+            One time task
+        <% end %>
+      </:col>
+      <:action :let={task}>
+        <%= if can_complete_task?(task, @child) do %>
+          <.button phx-click="complete_task" phx-value-id={task.id}>
+            Complete
+          </.button>
+        <% end %>
+      </:action>
+    </.table>
+  </div>
 </div>

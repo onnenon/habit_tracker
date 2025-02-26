@@ -6,19 +6,21 @@ defmodule HabitQuest.Tasks.Task do
     field :description, :string
     field :title, :string
     field :points, :integer
-    field :task_type, :string, default: "one_off"  # one_off, punch_card, weekly
+    field :task_type, :string, default: "one_off"
     field :recurring, :boolean, default: false
     field :recurring_interval, :integer
     field :recurring_period, :string
-    field :completions_required, :integer  # For punch card tasks
-    field :current_completions, :integer, default: 0  # For punch card tasks
-    field :schedule_days, {:array, :string}  # For weekly tasks
+    field :completions_required, :integer
+    field :current_completions, :integer, default: 0
+    field :schedule_days, {:array, :string}
     field :child_ids, {:array, :integer}, virtual: true
 
     many_to_many :children, HabitQuest.Children.Child,
       join_through: HabitQuest.Tasks.ChildTask,
       on_replace: :delete,
       on_delete: :delete_all
+
+    has_many :task_completions, HabitQuest.Tasks.TaskCompletion
 
     timestamps(type: :utc_datetime)
   end

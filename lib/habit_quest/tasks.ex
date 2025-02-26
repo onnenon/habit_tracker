@@ -6,7 +6,7 @@ defmodule HabitQuest.Tasks do
   import Ecto.Query, warn: false
   alias HabitQuest.Repo
 
-  alias HabitQuest.Tasks.Task
+  alias HabitQuest.Tasks.{Task, TaskCompletion}
   alias HabitQuest.Children.Child
 
   @doc """
@@ -49,11 +49,73 @@ defmodule HabitQuest.Tasks do
   @doc """
   Updates a task.
   """
-  def update_task(%Task{} = task, attrs, child_ids \\ nil) do
+  def update_task(%Task{} = task, attrs, child_ids) do
     task
     |> Task.changeset(attrs)
     |> put_children(child_ids)
     |> Repo.update()
+  end
+
+  def complete_task(%Task{} = task, %Child{} = child) do
+    Ecto.Multi.new()
+    |> maybe_create_task_completion(task, child)
+    |> maybe_update_punch_card(task)
+    |> Repo.transaction()
+  end
+
+  defp maybe_create_task_completion(multi, %Task{task_type: "weekly"} = task, child) do
+    case Repo.exists?(TaskCompletion.completed_today?(task.id, child.id)) do
+      true ->
+        multi
+      false ->
+        multi
+        |> Ecto.Multi.insert(:task_completion, %TaskCompletion{
+          task_id: task.id,
+          child_id: child.id,
+          completed_at: DateTime.utc_now()
+        })
+    end
+  end
+
+  defp maybe_create_task_completion(multi, _task, _child), do: multi
+
+  defp maybe_update_punch_card(multi, %Task{task_type: "punch_card"} = task) do
+    new_completions = (task.current_completions || 0) + 1
+    attrs = if new_completions >= task.completions_required do
+      %{current_completions: 0}
+    else
+      %{current_completions: new_completions}
+    end
+
+    multi
+    |> Ecto.Multi.update(:task, Task.changeset(task, attrs))
+  end
+
+  defp maybe_update_punch_card(multi, _task), do: multi
+
+  def task_completed_today?(%Task{task_type: "weekly"} = task, child_id) do
+    Repo.exists?(TaskCompletion.completed_today?(task.id, child_id))
+  end
+  def task_completed_today?(_task, _child_id), do: false
+
+  def list_task_completions_in_range(child_id, start_date, end_date) do
+    from(tc in TaskCompletion,
+      where: tc.child_id == ^child_id and
+             fragment("date(?)", tc.completed_at) >= ^start_date and
+             fragment("date(?)", tc.completed_at) <= ^end_date,
+      select: {tc.task_id, fragment("date(?)", tc.completed_at)}
+    )
+    |> Repo.all()
+    |> Enum.group_by(&elem(&1, 0), &elem(&1, 1))
+  end
+
+  def task_completed_on_date?(task, child_id, date) do
+    Repo.exists?(
+      from tc in TaskCompletion,
+        where: tc.task_id == ^task.id and
+               tc.child_id == ^child_id and
+               fragment("date(?)", tc.completed_at) == ^date
+    )
   end
 
   @doc """

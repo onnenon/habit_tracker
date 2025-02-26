@@ -17,6 +17,7 @@ defmodule HabitQuest.Application do
       # Start a worker by calling: HabitQuest.Worker.start_link(arg)
       # {HabitQuest.Worker, arg},
       # Start to serve requests, typically the last entry
+      HabitQuest.Scheduler,
       HabitQuestWeb.Endpoint
     ]
 
