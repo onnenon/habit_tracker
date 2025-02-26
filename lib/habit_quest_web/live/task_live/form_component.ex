@@ -23,8 +23,13 @@ defmodule HabitQuestWeb.TaskLive.FormComponent do
         <.input field={@form[:title]} type="text" label="Title" />
         <.input field={@form[:description]} type="textarea" label="Description" />
         <.input field={@form[:points]} type="number" label="Points" />
+
         <div class="space-y-4">
-          <.input field={@form[:recurring]} type="checkbox" label="Recurring habit?" phx-change="toggle_recurring"/>
+          <.input
+            field={@form[:recurring]}
+            type="checkbox"
+            label="Recurring habit?"
+          />
 
           <%= if @show_recurring_fields do %>
             <div class="mt-4 flex gap-4 items-end">
@@ -60,7 +65,7 @@ defmodule HabitQuestWeb.TaskLive.FormComponent do
                     type="checkbox"
                     name="task[child_ids][]"
                     value={id}
-                    checked={id in @selected_child_ids}
+                    checked={id in (@form[:child_ids].value || [])}
                     class="h-4 w-4 rounded border-zinc-300 text-zinc-900 focus:ring-0"
                   />
                 </div>
@@ -87,48 +92,53 @@ defmodule HabitQuestWeb.TaskLive.FormComponent do
   def update(%{task: task, children: children} = assigns, socket) do
     changeset = Tasks.change_task(task)
     children_options = for child <- children, do: {child.name, child.id}
-    selected_child_ids = Enum.map(task.children || [], & &1.id)
 
     {:ok,
      socket
      |> assign(assigns)
      |> assign(:children_options, children_options)
-     |> assign(:selected_child_ids, selected_child_ids)
-     |> assign(:show_recurring_fields, task.recurring)
+     |> assign(:show_recurring_fields, task.recurring || false)
      |> assign_form(changeset)}
   end
 
   @impl true
-  def handle_event("toggle_recurring", %{"task" => %{"recurring" => recurring}} = params, socket) do
-    show_recurring = recurring == "true"
+  def handle_event("validate", %{"task" => task_params}, socket) do
+    show_recurring = case task_params["recurring"] do
+      "true" -> true
+      true -> true
+      _ -> false
+    end
 
-    {:noreply,
-     socket
-     |> assign(:show_recurring_fields, show_recurring)
-     |> handle_validate(params)}
-  end
+    # Ensure child_ids are properly handled during validation
+    task_params = case task_params["child_ids"] do
+      nil -> task_params
+      ids when is_list(ids) ->
+        %{task_params | "child_ids" => ensure_integer_ids(ids)}
+      _ -> task_params
+    end
 
-  @impl true
-  def handle_event("validate", %{"task" => _task_params} = params, socket) do
-    {:noreply, handle_validate(socket, params)}
-  end
-
-  @impl true
-  def handle_event("save", %{"task" => task_params}, socket) do
-    save_task(socket, socket.assigns.action, task_params)
-  end
-
-  defp handle_validate(socket, %{"task" => task_params}) do
     changeset =
       socket.assigns.task
       |> Tasks.change_task(task_params)
       |> Map.put(:action, :validate)
 
-    assign_form(socket, changeset)
+    {:noreply,
+     socket
+     |> assign(:show_recurring_fields, show_recurring)
+     |> assign_form(changeset)}
+  end
+
+  @impl true
+  def handle_event("save", %{"task" => task_params}, socket) do
+    IO.inspect(task_params, label: "Task params")  # Debug line
+    save_task(socket, socket.assigns.action, task_params)
   end
 
   defp save_task(socket, :edit, task_params) do
-    child_ids = (task_params["child_ids"] || []) |> Enum.map(&String.to_integer/1)
+    IO.inspect(socket.assigns.task, label: "Current task")  # Debug line
+    child_ids = ensure_integer_ids(task_params["child_ids"] || [])
+    IO.inspect(child_ids, label: "Child IDs")  # Debug line
+
     case Tasks.update_task(socket.assigns.task, task_params, child_ids) do
       {:ok, task} ->
         notify_parent({:saved, task})
@@ -139,12 +149,13 @@ defmodule HabitQuestWeb.TaskLive.FormComponent do
          |> push_patch(to: socket.assigns.patch)}
 
       {:error, %Ecto.Changeset{} = changeset} ->
+        IO.inspect(changeset, label: "Error changeset")  # Debug line
         {:noreply, assign_form(socket, changeset)}
     end
   end
 
   defp save_task(socket, :new, task_params) do
-    child_ids = (task_params["child_ids"] || []) |> Enum.map(&String.to_integer/1)
+    child_ids = ensure_integer_ids(task_params["child_ids"] || [])
     case Tasks.create_task(task_params, child_ids) do
       {:ok, task} ->
         notify_parent({:saved, task})
@@ -164,4 +175,19 @@ defmodule HabitQuestWeb.TaskLive.FormComponent do
   end
 
   defp notify_parent(msg), do: send(self(), {__MODULE__, msg})
+
+  defp ensure_integer_ids(ids) when is_list(ids) do
+    Enum.map(ids, &safe_to_integer/1)
+    |> Enum.filter(&(&1 != nil))
+  end
+  defp ensure_integer_ids(_), do: []
+
+  defp safe_to_integer(val) when is_integer(val), do: val
+  defp safe_to_integer(val) when is_binary(val) do
+    case Integer.parse(val) do
+      {int, ""} -> int
+      _ -> nil
+    end
+  end
+  defp safe_to_integer(_), do: nil
 end

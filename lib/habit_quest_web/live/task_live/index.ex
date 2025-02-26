@@ -35,6 +35,7 @@ defmodule HabitQuestWeb.TaskLive.Index do
 
   defp apply_action(socket, :edit, %{"id" => id}) do
     task = Tasks.get_task!(id)
+    |> HabitQuest.Repo.preload(:children)  # Ensure children are preloaded
 
     socket
     |> assign(:page_title, "Edit Habit")

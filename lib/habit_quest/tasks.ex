@@ -67,12 +67,33 @@ defmodule HabitQuest.Tasks do
   Returns an `%Ecto.Changeset{}` for tracking task changes.
   """
   def change_task(%Task{} = task, attrs \\ %{}) do
-    Task.changeset(task, attrs)
+    task
+    |> Repo.preload(:children)
+    |> Task.changeset(attrs)
   end
 
   defp put_children(changeset, nil), do: changeset
   defp put_children(changeset, child_ids) when is_list(child_ids) do
-    children = Repo.all(from c in Child, where: c.id in ^child_ids)
+    # Ensure we're working with valid integer IDs
+    valid_ids = child_ids
+    |> Enum.filter(&(&1 != nil))
+    |> Enum.map(&to_integer/1)
+    |> Enum.filter(&(&1 != nil))
+
+    children = case valid_ids do
+      [] -> []
+      ids -> Repo.all(from c in Child, where: c.id in ^ids)
+    end
+
     Ecto.Changeset.put_assoc(changeset, :children, children)
   end
+
+  defp to_integer(val) when is_integer(val), do: val
+  defp to_integer(val) when is_binary(val) do
+    case Integer.parse(val) do
+      {int, ""} -> int
+      _ -> nil
+    end
+  end
+  defp to_integer(_), do: nil
 end

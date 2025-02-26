@@ -11,9 +11,9 @@ defmodule HabitQuest.Tasks.Task do
     field :recurring_period, :string
 
     many_to_many :children, HabitQuest.Children.Child,
-      join_through: "children_tasks",
+      join_through: HabitQuest.Tasks.ChildTask,
       on_replace: :delete,
-      defaults: []
+      on_delete: :delete_all
 
     timestamps(type: :utc_datetime)
   end

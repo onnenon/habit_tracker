@@ -9,8 +9,9 @@ defmodule HabitQuest.Children.Child do
     field :age, :integer, virtual: true
 
     many_to_many :tasks, HabitQuest.Tasks.Task,
-      join_through: "children_tasks",
-      on_replace: :delete
+      join_through: HabitQuest.Tasks.ChildTask,
+      on_replace: :delete,
+      on_delete: :delete_all
 
     timestamps(type: :utc_datetime)
   end
