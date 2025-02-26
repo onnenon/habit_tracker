@@ -1,8 +1,13 @@
 <div class="w-full px-4">
   <.header>
-    <%= @child.name %>'s Dashboard
-    <:subtitle>Current Points: <%= @child.points %></:subtitle>
+    {@child.name}'s Dashboard
+    <:subtitle>Current Points: {@child.points}</:subtitle>
   </.header>
+
+  <div class="bg-white p-4 rounded shadow mb-4">
+    <h3 class="font-bold">Debug Info</h3>
+    <pre class="text-xs overflow-x-auto"><%= inspect(@task_completions, pretty: true) %></pre>
+  </div>
 
   <div class="mt-8">
     <h2 class="text-xl font-semibold mb-4">Punch Card Tasks</h2>
@@ -10,10 +15,10 @@
       <%= for task <- Enum.filter(@tasks, & &1.task_type == "punch_card") do %>
         <div class="bg-white shadow rounded-lg p-4">
           <div class="flex justify-between items-start mb-2">
-            <h3 class="text-lg font-medium"><%= task.title %></h3>
-            <span class="text-sm font-medium text-purple-600"><%= task.points %> pts</span>
+            <h3 class="text-lg font-medium">{task.title}</h3>
+            <span class="text-sm font-medium text-purple-600">{task.points} pts</span>
           </div>
-          <p class="text-sm text-gray-600 mb-4"><%= task.description %></p>
+          <p class="text-sm text-gray-600 mb-4">{task.description}</p>
           <div class="flex gap-2 mb-4">
             <%= for i <- 1..task.completions_required do %>
               <div class={[
@@ -25,8 +30,17 @@
                 end
               ]}>
                 <%= if i <= task.current_completions do %>
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-4 h-4">
-                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                    class="w-4 h-4"
+                  >
+                    <path
+                      fill-rule="evenodd"
+                      d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                      clip-rule="evenodd"
+                    />
                   </svg>
                 <% else %>
                   <span class="w-2 h-2 rounded-full bg-gray-300"></span>
@@ -48,10 +62,11 @@
     <h2 class="text-xl font-semibold mb-6">Daily Tasks</h2>
     <div class="grid grid-cols-7 xl:grid-cols-8">
       <%= for {day, index} <- Enum.with_index(["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]) do %>
-        <% 
-          date = Date.add(@current_week.start, index)
-          is_today = Date.compare(date, Date.utc_today()) == :eq
-          full_day = case day do
+        <% date = Date.add(@current_week.start, index)
+        is_today = Date.compare(date, Date.utc_today()) == :eq
+
+        full_day =
+          case day do
             "Mon" -> "monday"
             "Tue" -> "tuesday"
             "Wed" -> "wednesday"
@@ -59,8 +74,7 @@
             "Fri" -> "friday"
             "Sat" -> "saturday"
             "Sun" -> "sunday"
-          end
-        %>
+          end %>
         <div class={[
           "min-h-[200px] bg-white rounded-lg shadow-md overflow-hidden transition-all",
           if(is_today, do: "xl:col-span-2 xl:row-span-2")
@@ -73,8 +87,10 @@
               "font-semibold text-center text-gray-800",
               if(is_today, do: "text-lg", else: "text-base")
             ]}>
-              <%= day %>
-              <div class="text-sm font-normal text-gray-500 mt-1"><%= Calendar.strftime(date, "%b %d") %></div>
+              {day}
+              <div class="text-sm font-normal text-gray-500 mt-1">
+                {Calendar.strftime(date, "%b %d")}
+              </div>
             </h3>
           </div>
           <div class="p-3 space-y-3 max-h-[500px] overflow-y-auto">
@@ -84,56 +100,86 @@
             end) do %>
               <div class={[
                 if is_today do
-                  "bg-purple-50 rounded-lg p-3 border border-purple-100 hover:border-purple-200 transition-colors"
+                  if task.id in Map.keys(@task_completions) && date in @task_completions[task.id] do
+                    "bg-green-50 rounded-lg p-3 border border-green-100 hover:border-green-200 transition-colors"
+                  else
+                    "bg-purple-50 rounded-lg p-3 border border-purple-100 hover:border-purple-200 transition-colors"
+                  end
                 else
-                  "bg-gray-50 rounded-lg p-2 border border-gray-200"
+                  if task.id in Map.keys(@task_completions) && date in @task_completions[task.id] do
+                    "bg-green-50 rounded-lg p-2 border border-green-100"
+                  else
+                    "bg-gray-50 rounded-lg p-2 border border-gray-200"
+                  end
                 end
               ]}>
                 <div class="flex justify-between items-start gap-2">
-                  <h4 class={[
-                    "font-medium",
-                    if(is_today, do: "text-sm text-purple-900", else: "text-xs text-gray-700")
-                  ]}><%= task.title %></h4>
-                  <span class={[
-                    "font-medium whitespace-nowrap",
-                    if(is_today, do: "text-xs text-purple-600", else: "text-xs text-gray-600")
-                  ]}><%= task.points %> pts</span>
-                </div>
-                <%= if task.id in Map.keys(@task_completions) && date in @task_completions[task.id] do %>
-                  <div class={[
-                    "w-full mt-2 text-xs py-2 text-center rounded-md border",
-                    if is_today do
-                      "text-green-700 bg-green-50 border-green-200"
-                    else
-                      "text-gray-600 bg-gray-50 border-gray-200 text-[10px]"
-                    end
-                  ]}>
-                    Completed
+                  <div>
+                    <h4 class={[
+                      "font-medium",
+                      if task.id in Map.keys(@task_completions) &&
+                           date in @task_completions[task.id] do
+                        if(is_today, do: "text-sm text-green-900", else: "text-xs text-green-700")
+                      else
+                        if(is_today, do: "text-sm text-purple-900", else: "text-xs text-gray-700")
+                      end
+                    ]}>
+                      {task.title}
+                    </h4>
+                    <span class={[
+                      "font-medium whitespace-nowrap",
+                      if task.id in Map.keys(@task_completions) &&
+                           date in @task_completions[task.id] do
+                        if(is_today, do: "text-xs text-green-600", else: "text-xs text-green-600")
+                      else
+                        if(is_today, do: "text-xs text-purple-600", else: "text-xs text-gray-600")
+                      end
+                    ]}>
+                      {task.points} pts
+                    </span>
                   </div>
-                <% else %>
-                  <%= if can_complete_task?(task, @child, date) do %>
-                    <.button 
-                      phx-click="complete_task" 
-                      phx-value-id={task.id} 
-                      class={"w-full mt-2 #{if(is_today, do: "text-xs py-2", else: "text-[10px] py-1")}"}
-                    >
-                      Complete
-                    </.button>
+
+                  <%= if task.id in Map.keys(@task_completions) && date in @task_completions[task.id] do %>
+                    <div class="rounded-full flex items-center justify-center p-2 text-green-600">
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 20 20"
+                        fill="currentColor"
+                        class="w-5 h-5"
+                      >
+                        <path
+                          fill-rule="evenodd"
+                          d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                          clip-rule="evenodd"
+                        />
+                      </svg>
+                    </div>
                   <% else %>
-                    <%= if Date.compare(date, Date.utc_today()) == :gt do %>
-                      <div class={[
-                        "w-full mt-2 text-center rounded-md border",
-                        if is_today do
-                          "text-xs py-2 text-gray-500 bg-gray-50 border-gray-200"
-                        else
-                          "text-[10px] py-1 text-gray-400 bg-gray-50/50 border-gray-100"
-                        end
-                      ]}>
-                        Upcoming
-                      </div>
+                    <%= cond do %>
+                      <% Date.compare(date, Date.utc_today()) == :gt -> %>
+                        <div></div>
+                      <% can_complete_task?(task, @child, date) -> %>
+                        <button
+                          phx-click="complete_task"
+                          phx-value-id={task.id}
+                          phx-value-date={date}
+                          class={"rounded-full flex items-center justify-center p-2 hover:bg-purple-100 #{if(is_today, do: "text-purple-600", else: "text-purple-500")}"}
+                        >
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            viewBox="0 0 20 20"
+                            fill="none"
+                            stroke="currentColor"
+                            class="w-5 h-5"
+                          >
+                            <rect x="3" y="3" width="14" height="14" rx="2" stroke-width="2" />
+                          </svg>
+                        </button>
+                      <% true -> %>
+                        <div></div>
                     <% end %>
                   <% end %>
-                <% end %>
+                </div>
               </div>
             <% end %>
           </div>
@@ -144,20 +190,17 @@
 
   <div class="mt-8">
     <h2 class="text-xl font-semibold mb-4">Other Tasks</h2>
-    <.table
-      id="other-tasks"
-      rows={Enum.filter(@tasks, & &1.task_type == "one_off")}
-    >
-      <:col :let={task} label="Title"><%= task.title %></:col>
-      <:col :let={task} label="Description"><%= task.description %></:col>
-      <:col :let={task} label="Points"><%= task.points %> pts</:col>
+    <.table id="other-tasks" rows={Enum.filter(@tasks, &(&1.task_type == "one_off"))}>
+      <:col :let={task} label="Title">{task.title}</:col>
+      <:col :let={task} label="Description">{task.description}</:col>
+      <:col :let={task} label="Points">{task.points} pts</:col>
       <:col :let={task} label="Status">
         <%= case task.task_type do %>
           <% "weekly" -> %>
             <%= if today_name() in (task.schedule_days || []) do %>
               Available Today
             <% else %>
-              Next available: <%= next_available_day(task.schedule_days) %>
+              Next available: {next_available_day(task.schedule_days)}
             <% end %>
           <% "one_off" -> %>
             One time task

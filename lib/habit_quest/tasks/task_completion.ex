@@ -27,4 +27,12 @@ defmodule HabitQuest.Tasks.TaskCompletion do
              fragment("date(?)", tc.completed_at) == fragment("date('now')")
     )
   end
+
+  def completed_on_date?(task_id, child_id, date) do
+    from(tc in __MODULE__,
+      where: tc.task_id == ^task_id and
+             tc.child_id == ^child_id and
+             fragment("date(?)", tc.completed_at) == fragment("date(?)", ^date)
+    )
+  end
 end

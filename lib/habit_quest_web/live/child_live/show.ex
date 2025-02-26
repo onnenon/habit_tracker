@@ -17,7 +17,7 @@ defmodule HabitQuestWeb.ChildLive.Show do
     week_end = Date.utc_today() |> Date.end_of_week(:monday)
 
     task_completions = Tasks.list_task_completions_in_range(child.id, week_start, week_end)
-
+    IO.inspect(task_completions, label: "Task Completions")
     {:ok,
      socket
      |> assign(:page_title, child.name)
@@ -42,6 +42,43 @@ defmodule HabitQuestWeb.ChildLive.Show do
   end
 
   @impl true
+  def handle_event("complete_task", %{"id" => task_id, "date" => date}, socket) do
+    task = Tasks.get_task!(task_id)
+    child = socket.assigns.child
+    completion_date = Date.from_iso8601!(date)
+
+    case Tasks.complete_task(task, child, completion_date) do
+      {:ok, %{task_completion: _completion}} ->
+        # Weekly task completed successfully
+        week_start = socket.assigns.current_week.start
+        week_end = socket.assigns.current_week.end
+        task_completions = Tasks.list_task_completions_in_range(child.id, week_start, week_end)
+
+        IO.inspect(task_completions, label: "Task Completions")
+        Children.award_points(child, task.points)
+        {:noreply,
+         socket
+         |> assign(:task_completions, task_completions)
+         |> put_flash(:info, "Task completed successfully!")}
+
+      {:ok, %{task: _updated_task}} ->
+        # Punch card task updated successfully
+        if task.current_completions + 1 >= task.completions_required do
+          Children.award_points(child, task.points)
+        end
+
+        {:noreply,
+         socket
+         |> put_flash(:info, "Task progress updated!")
+         |> assign(:tasks, Tasks.list_tasks_for_child(child))}
+
+      {:error, _, changeset, _} ->
+        {:noreply,
+         socket
+         |> put_flash(:error, "Error completing task: #{format_errors(changeset)}")}
+    end
+  end
+
   def handle_event("complete_task", %{"id" => task_id}, socket) do
     task = Tasks.get_task!(task_id)
     child = socket.assigns.child
@@ -49,28 +86,25 @@ defmodule HabitQuestWeb.ChildLive.Show do
     case Tasks.complete_task(task, child) do
       {:ok, %{task_completion: _completion}} ->
         # Weekly task completed successfully
+        week_start = socket.assigns.current_week.start
+        week_end = socket.assigns.current_week.end
+        task_completions = Tasks.list_task_completions_in_range(child.id, week_start, week_end)
+
         Children.award_points(child, task.points)
         {:noreply,
          socket
-         |> put_flash(:info, "Task completed successfully!")
-         |> assign(:tasks, Tasks.list_tasks_for_child(child))}
+         |> assign(:task_completions, task_completions)
+         |> put_flash(:info, "Task completed successfully!")}
 
       {:ok, %{task: _updated_task}} ->
         # Punch card task updated successfully
         if task.current_completions + 1 >= task.completions_required do
           Children.award_points(child, task.points)
         end
+
         {:noreply,
          socket
          |> put_flash(:info, "Task progress updated!")
-         |> assign(:tasks, Tasks.list_tasks_for_child(child))}
-
-      {:ok, _} ->
-        # One-off task completed
-        Children.award_points(child, task.points)
-        {:noreply,
-         socket
-         |> put_flash(:info, "Task completed successfully!")
          |> assign(:tasks, Tasks.list_tasks_for_child(child))}
 
       {:error, _, changeset, _} ->

@@ -56,15 +56,27 @@ defmodule HabitQuest.Tasks do
     |> Repo.update()
   end
 
-  def complete_task(%Task{} = task, %Child{} = child) do
+  @doc """
+  Completes a task for a child on a specific date.
+  For weekly tasks, this creates a task completion record.
+  For punch card tasks, this increments the completion counter.
+  """
+  def complete_task(%Task{} = task, %Child{} = child, completion_date \\ nil) do
     Ecto.Multi.new()
-    |> maybe_create_task_completion(task, child)
+    |> maybe_create_task_completion(task, child, completion_date)
     |> maybe_update_punch_card(task)
     |> Repo.transaction()
   end
 
-  defp maybe_create_task_completion(multi, %Task{task_type: "weekly"} = task, child) do
-    case Repo.exists?(TaskCompletion.completed_today?(task.id, child.id)) do
+  defp maybe_create_task_completion(multi, %Task{task_type: "weekly"} = task, child, completion_date) do
+    completed_at = if completion_date do
+      completion_date
+      |> DateTime.new!(~T[12:00:00], "Etc/UTC")
+    else
+      DateTime.utc_now()
+    end
+
+    case Repo.exists?(TaskCompletion.completed_on_date?(task.id, child.id, completed_at)) do
       true ->
         multi
       false ->
@@ -72,26 +84,29 @@ defmodule HabitQuest.Tasks do
         |> Ecto.Multi.insert(:task_completion, %TaskCompletion{
           task_id: task.id,
           child_id: child.id,
-          completed_at: DateTime.utc_now()
+          completed_at: completed_at
         })
     end
   end
 
-  defp maybe_create_task_completion(multi, _task, _child), do: multi
+  defp maybe_create_task_completion(multi, _task, _child, _completion_date), do: multi
 
-  defp maybe_update_punch_card(multi, %Task{task_type: "punch_card"} = task) do
-    new_completions = (task.current_completions || 0) + 1
-    attrs = if new_completions >= task.completions_required do
-      %{current_completions: 0}
-    else
-      %{current_completions: new_completions}
+  defp maybe_update_punch_card(multi, %Task{} = task) do
+    case task.task_type do
+      "punch_card" ->
+        new_completions = (task.current_completions || 0) + 1
+        attrs = if new_completions >= task.completions_required do
+          %{current_completions: 0}
+        else
+          %{current_completions: new_completions}
+        end
+
+        multi
+        |> Ecto.Multi.update(:task, Task.changeset(task, attrs))
+      _ ->
+        multi
     end
-
-    multi
-    |> Ecto.Multi.update(:task, Task.changeset(task, attrs))
   end
-
-  defp maybe_update_punch_card(multi, _task), do: multi
 
   def task_completed_today?(%Task{task_type: "weekly"} = task, child_id) do
     Repo.exists?(TaskCompletion.completed_today?(task.id, child_id))
