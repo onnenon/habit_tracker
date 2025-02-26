@@ -68,6 +68,7 @@ defmodule HabitQuestWeb.ChildLive.Show do
          |> assign(:task_completions, task_completions)
          |> assign(:tasks, Tasks.list_tasks_for_child(updated_child))
          |> assign(:child, updated_child)
+         |> push_event("task-completed", %{})
          |> put_flash(:info, "Task completed successfully!")}
 
       {:ok, %{task: _updated_task}} ->
@@ -116,21 +117,34 @@ defmodule HabitQuestWeb.ChildLive.Show do
          |> assign(:task_completions, task_completions)
          |> assign(:tasks, Tasks.list_tasks_for_child(updated_child))
          |> assign(:child, updated_child)
+         |> push_event("task-completed", %{})
          |> put_flash(:info, "Task completed successfully!")}
 
-      {:ok, %{task: _updated_task}} ->
+      {:ok, %{task: updated_task}} ->
         # Punch card task updated successfully
-        if task.current_completions + 1 >= task.completions_required do
+        # Check if this completion just completed the punch card
+        was_just_completed = updated_task.current_completions == 0 && task.current_completions + 1 >= task.completions_required
+
+        if was_just_completed do
           Children.award_points(child, task.points)
         end
 
         updated_child = Children.get_child!(child.id)
 
-        {:noreply,
-         socket
-         |> assign(:child, updated_child)
-         |> assign(:tasks, Tasks.list_tasks_for_child(updated_child))
-         |> put_flash(:info, "Task progress updated!")}
+        socket = socket
+          |> assign(:child, updated_child)
+          |> assign(:tasks, Tasks.list_tasks_for_child(updated_child))
+
+        if was_just_completed do
+          {:noreply,
+           socket
+           |> push_event("punch-card-completed", %{})
+           |> put_flash(:info, "Punch card completed! Points awarded!")}
+        else
+          {:noreply,
+           socket
+           |> put_flash(:info, "Task progress updated!")}
+        end
 
       {:error, _, changeset, _} ->
         {:noreply,
