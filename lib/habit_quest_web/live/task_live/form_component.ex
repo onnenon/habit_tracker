@@ -90,7 +90,13 @@ defmodule HabitQuestWeb.TaskLive.FormComponent do
 
   @impl true
   def update(%{task: task, children: children} = assigns, socket) do
+    # Extract child IDs from the task's children association
+    child_ids = Enum.map(task.children, & &1.id)
+
+    # Create the changeset with child_ids included
     changeset = Tasks.change_task(task)
+    |> Ecto.Changeset.put_change(:child_ids, child_ids)
+
     children_options = for child <- children, do: {child.name, child.id}
 
     {:ok,

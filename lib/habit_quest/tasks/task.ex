@@ -9,6 +9,7 @@ defmodule HabitQuest.Tasks.Task do
     field :recurring, :boolean, default: false
     field :recurring_interval, :integer
     field :recurring_period, :string
+    field :child_ids, {:array, :integer}, virtual: true
 
     many_to_many :children, HabitQuest.Children.Child,
       join_through: HabitQuest.Tasks.ChildTask,
@@ -27,7 +28,7 @@ defmodule HabitQuest.Tasks.Task do
   @doc false
   def changeset(task, attrs) do
     task
-    |> cast(attrs, [:title, :description, :points, :recurring, :recurring_interval, :recurring_period])
+    |> cast(attrs, [:title, :description, :points, :recurring, :recurring_interval, :recurring_period, :child_ids])
     |> validate_required([:title, :description, :points, :recurring])
     |> validate_recurring_fields()
   end

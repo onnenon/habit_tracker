@@ -67,8 +67,9 @@ defmodule HabitQuest.Tasks do
   Returns an `%Ecto.Changeset{}` for tracking task changes.
   """
   def change_task(%Task{} = task, attrs \\ %{}) do
+    # Make sure we always have children loaded for proper form handling
+    task = if Ecto.assoc_loaded?(task.children), do: task, else: Repo.preload(task, :children)
     task
-    |> Repo.preload(:children)
     |> Task.changeset(attrs)
   end
 
