@@ -12,12 +12,10 @@ defmodule HabitQuest.Application do
       HabitQuest.Repo,
       {DNSCluster, query: Application.get_env(:habit_quest, :dns_cluster_query) || :ignore},
       {Phoenix.PubSub, name: HabitQuest.PubSub},
-      # Start the Finch HTTP client for sending emails
-      {Finch, name: HabitQuest.Finch},
       # Start a worker by calling: HabitQuest.Worker.start_link(arg)
       # {HabitQuest.Worker, arg},
       # Start to serve requests, typically the last entry
-      HabitQuest.Scheduler,
+      {Finch, name: HabitQuestFinch},
       HabitQuestWeb.Endpoint
     ]
 

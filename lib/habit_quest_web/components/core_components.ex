@@ -462,6 +462,7 @@ defmodule HabitQuestWeb.CoreComponents do
 
   slot :col, required: true do
     attr :label, :string
+    attr :class, :string
   end
 
   slot :action, doc: "the slot for showing user actions in the last table column"
@@ -477,28 +478,21 @@ defmodule HabitQuestWeb.CoreComponents do
       <table class="w-[40rem] mt-11 sm:w-full">
         <thead class="text-sm text-left leading-6 text-zinc-500">
           <tr>
-            <th :for={col <- @col} class="p-0 pb-4 pr-6 font-normal">{col[:label]}</th>
-            <th :if={@action != []} class="relative p-0 pb-4">
-              <span class="sr-only">{gettext("Actions")}</span>
+            <th :for={col <- @col} class={["p-0 pb-4 pr-6 font-normal", col[:class]]}>
+              <%= col[:label] %>
             </th>
+            <th class="relative p-0 pb-4"><span class="sr-only"><%= gettext("Actions") %></span></th>
           </tr>
         </thead>
-        <tbody
-          id={@id}
-          phx-update={match?(%Phoenix.LiveView.LiveStream{}, @rows) && "stream"}
-          class="relative divide-y divide-zinc-100 border-t border-zinc-200 text-sm leading-6 text-zinc-700"
-        >
+        <tbody class="relative divide-y divide-zinc-100 border-t border-zinc-200 text-sm leading-6 text-zinc-700">
           <tr :for={row <- @rows} id={@row_id && @row_id.(row)} class="group hover:bg-zinc-50">
             <td
               :for={{col, i} <- Enum.with_index(@col)}
               phx-click={@row_click && @row_click.(row)}
-              class={["relative p-0", @row_click && "hover:cursor-pointer"]}
+              class={["relative p-0", [@row_click && "hover:cursor-pointer"]]}
             >
-              <div class="block py-4 pr-6">
-                <span class="absolute -inset-y-px right-0 -left-4 group-hover:bg-zinc-50 sm:rounded-l-xl" />
-                <span class={["relative", i == 0 && "font-semibold text-zinc-900"]}>
-                  {render_slot(col, @row_item.(row))}
-                </span>
+              <div class={["block py-4 pr-6", i == 0 && "font-semibold text-zinc-900", col[:class]]}>
+                <%= render_slot(col, @row_item.(row)) %>
               </div>
             </td>
             <td :if={@action != []} class="relative w-14 p-0">
@@ -508,7 +502,7 @@ defmodule HabitQuestWeb.CoreComponents do
                   :for={action <- @action}
                   class="relative ml-4 font-semibold leading-6 text-zinc-900 hover:text-zinc-700"
                 >
-                  {render_slot(action, @row_item.(row))}
+                  <%= render_slot(action, @row_item.(row)) %>
                 </span>
               </div>
             </td>

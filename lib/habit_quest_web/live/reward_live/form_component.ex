@@ -9,7 +9,7 @@ defmodule HabitQuestWeb.RewardLive.FormComponent do
     <div>
       <.header>
         <%= @title %>
-        <:subtitle>Use this form to manage rewards.</:subtitle>
+        <:subtitle>Use this form to manage reward records in your database.</:subtitle>
       </.header>
 
       <.simple_form
@@ -19,13 +19,17 @@ defmodule HabitQuestWeb.RewardLive.FormComponent do
         phx-change="validate"
         phx-submit="save"
       >
-        <.input field={@form[:name]} type="text" label="Name" />
-        <.input field={@form[:description]} type="textarea" label="Description" />
-        <.input field={@form[:cost]} type="number" label="Cost (points)" min="0" />
+        <div class="space-y-6">
+          <div class="space-y-4">
+            <.input field={@form[:product_url]} type="url" label="Product URL" phx-blur="parse_url" />
+            <.input field={@form[:name]} type="text" label="Name" />
+            <.input field={@form[:description]} type="textarea" label="Description" />
+            <.input field={@form[:cost]} type="number" label="Cost" />
+            <.input field={@form[:image_url]} type="url" label="Image URL" />
+          </div>
 
-        <div class="space-y-3">
-          <label class="block text-sm font-semibold leading-6 text-zinc-800">
-            Available to Children
+          <label class="text-sm font-semibold leading-6 text-zinc-800">
+            Available To
           </label>
 
           <%= for {name, id} <- @children_options do %>
@@ -75,6 +79,19 @@ defmodule HabitQuestWeb.RewardLive.FormComponent do
 
     {:noreply, assign_form(socket, changeset)}
   end
+
+  def handle_event("parse_url", %{"reward" => %{"product_url" => url}} = params, socket) when byte_size(url) > 0 do
+    parsed_data = parse_product_url(url)
+
+    changeset =
+      socket.assigns.reward
+      |> Rewards.change_reward(Map.merge(params["reward"], parsed_data))
+      |> Map.put(:action, :validate)
+
+    {:noreply, assign_form(socket, changeset)}
+  end
+
+  def handle_event("parse_url", _, socket), do: {:noreply, socket}
 
   def handle_event("save", %{"reward" => reward_params}, socket) do
     save_reward(socket, socket.assigns.action, reward_params)
@@ -132,4 +149,61 @@ defmodule HabitQuestWeb.RewardLive.FormComponent do
     end
   end
   defp safe_to_integer(_), do: nil
+
+  defp parse_product_url(url) do
+    with {:ok, %Finch.Response{body: body, status: 200}} <- Finch.build(:get, url) |> Finch.request(HabitQuestFinch),
+         {:ok, document} <- Floki.parse_document(body) do
+      %{
+        "name" => extract_product_name(document),
+        "description" => extract_product_description(document),
+        "image_url" => extract_product_image(document, url)
+      }
+    else
+      _ -> %{}
+    end
+  end
+
+  defp extract_product_name(document) do
+    document
+    |> Floki.find("meta[property='og:title']")
+    |> Floki.attribute("content")
+    |> List.first()
+    || document
+    |> Floki.find("title")
+    |> Floki.text()
+    |> String.trim()
+  end
+
+  defp extract_product_description(document) do
+    document
+    |> Floki.find("meta[property='og:description']")
+    |> Floki.attribute("content")
+    |> List.first()
+    || document
+    |> Floki.find("meta[name='description']")
+    |> Floki.attribute("content")
+    |> List.first()
+    || ""
+  end
+
+  defp extract_product_image(document, base_url) do
+    image_url = document
+    |> Floki.find("meta[property='og:image']")
+    |> Floki.attribute("content")
+    |> List.first()
+    || document
+    |> Floki.find("meta[property='product:image']")
+    |> Floki.attribute("content")
+    |> List.first()
+
+    case image_url do
+      nil -> nil
+      url ->
+        if String.starts_with?(url, ["http://", "https://"]) do
+          url
+        else
+          URI.merge(base_url, url) |> URI.to_string()
+        end
+    end
+  end
 end

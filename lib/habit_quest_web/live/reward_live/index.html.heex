@@ -12,6 +12,11 @@
   rows={@streams.rewards}
   row_click={fn {_id, reward} -> JS.navigate(~p"/rewards/#{reward}/edit") end}
 >
+  <:col :let={{_id, reward}} label="Image" class="w-24">
+    <%= if reward.image_url do %>
+      <img src={reward.image_url} alt={reward.name} class="w-20 h-20 object-cover rounded-lg" />
+    <% end %>
+  </:col>
   <:col :let={{_id, reward}} label="Name"><%= reward.name %></:col>
   <:col :let={{_id, reward}} label="Description"><%= reward.description %></:col>
   <:col :let={{_id, reward}} label="Cost"><%= reward.cost %> points</:col>
