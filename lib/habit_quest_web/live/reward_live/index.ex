@@ -7,7 +7,21 @@ defmodule HabitQuestWeb.RewardLive.Index do
 
   @impl true
   def mount(_params, _session, socket) do
-    {:ok, stream(socket, :rewards, Rewards.list_rewards())}
+    if connected?(socket) do
+      {:ok,
+       socket
+       |> assign(:uploaded_files, [])
+       |> stream(:rewards, Rewards.list_rewards())
+       |> allow_upload(:reward_image,
+         accept: ~w(.jpg .jpeg .png),
+         max_entries: 1,
+         max_file_size: 5_000_000,
+         auto_upload: true,
+         progress: &handle_progress/3
+       )}
+    else
+      {:ok, stream(socket, :rewards, Rewards.list_rewards())}
+    end
   end
 
   @impl true
@@ -43,18 +57,6 @@ defmodule HabitQuestWeb.RewardLive.Index do
   end
 
   @impl true
-  def handle_event("parse_url", params, socket) do
-    if socket.assigns.live_action in [:new, :edit] do
-      send_update(HabitQuestWeb.RewardLive.FormComponent,
-        id: socket.assigns.reward.id || :new,
-        event: "parse_url",
-        params: params
-      )
-    end
-    {:noreply, socket}
-  end
-
-  @impl true
   def handle_event("delete", %{"id" => id}, socket) do
     reward = Rewards.get_reward!(id)
     {:ok, _} = Rewards.delete_reward(reward)
@@ -62,5 +64,27 @@ defmodule HabitQuestWeb.RewardLive.Index do
     # Refresh the entire rewards list to ensure we have the latest state
     rewards = Rewards.list_rewards()
     {:noreply, stream(socket, :rewards, rewards, reset: true)}
+  end
+
+  defp handle_progress(:reward_image, entry, socket) do
+    if entry.done? do
+      uploaded_path = Path.join([:code.priv_dir(:habit_quest), "static", "uploads"])
+      File.mkdir_p!(uploaded_path)
+
+      consume_uploaded_entry(socket, entry, fn %{path: path} ->
+        dest = Path.join(uploaded_path, filename(entry))
+        File.cp!(path, dest)
+        {:ok, "/uploads/#{filename(entry)}"}
+      end)
+
+      {:noreply, update(socket, :uploaded_files, &(&1 ++ [entry]))}
+    else
+      {:noreply, socket}
+    end
+  end
+
+  defp filename(entry) do
+    [ext | _] = MIME.extensions(entry.client_type)
+    "#{entry.uuid}.#{ext}"
   end
 end

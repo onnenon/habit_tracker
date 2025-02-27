@@ -308,8 +308,8 @@
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   <%= for redeemed_reward <- @unfulfilled_rewards do %>
                     <div class="bg-white shadow rounded-lg overflow-hidden border border-yellow-100">
-                      <%= if redeemed_reward.reward.image_url do %>
-                        <img src={redeemed_reward.reward.image_url} alt={redeemed_reward.reward.name} class="w-full h-48 object-cover"/>
+                      <%= if redeemed_reward.reward.image do %>
+                        <img src={redeemed_reward.reward.image} alt={redeemed_reward.reward.name} class="w-full h-48 object-cover"/>
                       <% else %>
                         <div class="w-full h-48 bg-zinc-200 flex items-center justify-center">
                           <svg xmlns="http://www.w3.org/2000/svg" class="w-16 h-16 text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -347,8 +347,8 @@
               <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 <%= for reward <- @rewards do %>
                   <div class="bg-white shadow rounded-lg overflow-hidden">
-                    <%= if reward.image_url do %>
-                      <img src={reward.image_url} alt={reward.name} class="w-full h-48 object-cover"/>
+                    <%= if reward.image do %>
+                      <img src={reward.image} alt={reward.name} class="w-full h-48 object-cover"/>
                     <% else %>
                       <div class="w-full h-48 bg-zinc-200 flex items-center justify-center">
                         <svg xmlns="http://www.w3.org/2000/svg" class="w-16 h-16 text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">

@@ -7,7 +7,7 @@ defmodule HabitQuestWeb.Endpoint do
   @session_options [
     store: :cookie,
     key: "_habit_quest_key",
-    signing_salt: "J0QgJp1c",
+    signing_salt: "kgozSIOw",
     same_site: "Lax"
   ]
 
@@ -23,7 +23,8 @@ defmodule HabitQuestWeb.Endpoint do
     at: "/",
     from: :habit_quest,
     gzip: false,
-    only: HabitQuestWeb.static_paths()
+    only: HabitQuestWeb.static_paths(),
+    only_matching: ["uploads"]
 
   # Code reloading can be explicitly enabled under the
   # :code_reloader configuration of your endpoint.
