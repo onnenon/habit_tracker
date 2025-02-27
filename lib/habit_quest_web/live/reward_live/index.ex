@@ -36,8 +36,10 @@ defmodule HabitQuestWeb.RewardLive.Index do
   end
 
   @impl true
-  def handle_info({HabitQuestWeb.RewardLive.FormComponent, {:saved, reward}}, socket) do
-    {:noreply, stream_insert(socket, :rewards, reward)}
+  def handle_info({HabitQuestWeb.RewardLive.FormComponent, {:saved, _reward}}, socket) do
+    # Refresh the entire rewards list to ensure we have the latest state
+    rewards = Rewards.list_rewards()
+    {:noreply, stream(socket, :rewards, rewards, reset: true)}
   end
 
   @impl true
@@ -57,6 +59,8 @@ defmodule HabitQuestWeb.RewardLive.Index do
     reward = Rewards.get_reward!(id)
     {:ok, _} = Rewards.delete_reward(reward)
 
-    {:noreply, stream_delete(socket, :rewards, reward)}
+    # Refresh the entire rewards list to ensure we have the latest state
+    rewards = Rewards.list_rewards()
+    {:noreply, stream(socket, :rewards, rewards, reset: true)}
   end
 end

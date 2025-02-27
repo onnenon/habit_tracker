@@ -33,11 +33,7 @@ defmodule HabitQuestWeb.ChildLive.Show do
   @impl true
   def handle_params(%{"id" => id}, _, socket) do
     child = Children.get_child!(id)
-    |> HabitQuest.Repo.preload([tasks: from(task in Task, order_by: [desc: task.inserted_at])])
-    |> Child.changeset(%{})
-    |> Ecto.Changeset.apply_changes()
-
-    tasks = child.tasks
+    tasks = Tasks.list_tasks_for_child(child)
     week_start = socket.assigns.current_week.start
     week_end = socket.assigns.current_week.end
     task_completions = Tasks.list_task_completions_in_range(child.id, week_start, week_end)

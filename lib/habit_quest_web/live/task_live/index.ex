@@ -47,12 +47,16 @@ defmodule HabitQuestWeb.TaskLive.Index do
     task = Tasks.get_task!(id)
     {:ok, _} = Tasks.delete_task(task)
 
-    {:noreply, stream_delete(socket, :tasks, task)}
+    # Refresh the entire tasks list to ensure we have the latest state
+    tasks = list_tasks()
+    {:noreply, stream(socket, :tasks, tasks, reset: true)}
   end
 
   @impl true
-  def handle_info({HabitQuestWeb.TaskLive.FormComponent, {:saved, task}}, socket) do
-    {:noreply, stream_insert(socket, :tasks, task)}
+  def handle_info({HabitQuestWeb.TaskLive.FormComponent, {:saved, _task}}, socket) do
+    # Refresh the entire tasks list to ensure we have the latest state
+    tasks = list_tasks()
+    {:noreply, stream(socket, :tasks, tasks, reset: true)}
   end
 
   defp list_tasks do
