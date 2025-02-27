@@ -9,7 +9,7 @@ defmodule HabitQuestWeb.TaskLive.FormComponent do
     ~H"""
     <div>
       <.header>
-        <%= @title %>
+        {@title}
         <:subtitle>Create a new habit for your children to track</:subtitle>
       </.header>
 
@@ -23,7 +23,12 @@ defmodule HabitQuestWeb.TaskLive.FormComponent do
         <.input field={@form[:title]} type="text" label="Title" />
         <.input field={@form[:description]} type="textarea" label="Description" />
         <.input field={@form[:points]} type="number" label="Points" />
-        <.input field={@form[:task_type]} type="select" label="Task Type" options={Task.task_type_options()} />
+        <.input
+          field={@form[:task_type]}
+          type="select"
+          label="Task Type"
+          options={Task.task_type_options()}
+        />
 
         <div :if={@form[:task_type].value == "punch_card"}>
           <.input
@@ -48,7 +53,7 @@ defmodule HabitQuestWeb.TaskLive.FormComponent do
                 checked={value in (@form[:schedule_days].value || [])}
                 class="rounded border-zinc-300 text-zinc-900 focus:ring-0"
               />
-              <%= name %>
+              {name}
             </label>
           <% end %>
         </div>
@@ -67,7 +72,7 @@ defmodule HabitQuestWeb.TaskLive.FormComponent do
                 checked={id in (@form[:child_ids].value || [])}
                 class="rounded border-zinc-300 text-zinc-900 focus:ring-0"
               />
-              <%= name %>
+              {name}
             </label>
           <% end %>
         </div>
@@ -84,8 +89,9 @@ defmodule HabitQuestWeb.TaskLive.FormComponent do
   def update(%{task: task, children: children} = assigns, socket) do
     child_ids = Enum.map(task.children, & &1.id)
 
-    changeset = Tasks.change_task(task)
-    |> Ecto.Changeset.put_change(:child_ids, child_ids)
+    changeset =
+      Tasks.change_task(task)
+      |> Ecto.Changeset.put_change(:child_ids, child_ids)
 
     children_options = for child <- children, do: {child.name, child.id}
 
@@ -113,6 +119,7 @@ defmodule HabitQuestWeb.TaskLive.FormComponent do
 
   defp save_task(socket, :edit, task_params) do
     child_ids = ensure_integer_ids(task_params["child_ids"] || [])
+
     case Tasks.update_task(socket.assigns.task, task_params, child_ids) do
       {:ok, task} ->
         notify_parent({:saved, task})
@@ -129,6 +136,7 @@ defmodule HabitQuestWeb.TaskLive.FormComponent do
 
   defp save_task(socket, :new, task_params) do
     child_ids = ensure_integer_ids(task_params["child_ids"] || [])
+
     case Tasks.create_task(task_params, child_ids) do
       {:ok, task} ->
         notify_parent({:saved, task})
@@ -153,14 +161,17 @@ defmodule HabitQuestWeb.TaskLive.FormComponent do
     Enum.map(ids, &safe_to_integer/1)
     |> Enum.filter(&(&1 != nil))
   end
+
   defp ensure_integer_ids(_), do: []
 
   defp safe_to_integer(val) when is_integer(val), do: val
+
   defp safe_to_integer(val) when is_binary(val) do
     case Integer.parse(val) do
       {int, ""} -> int
       _ -> nil
     end
   end
+
   defp safe_to_integer(_), do: nil
 end
