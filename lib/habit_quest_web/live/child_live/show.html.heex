@@ -41,6 +41,17 @@
         >
           Other Tasks
         </button>
+        <div class="flex-1"></div>
+        <button
+          phx-click="change_tab"
+          phx-value-tab="rewards"
+          class={[
+            "py-4 px-1 border-b-2 font-medium text-sm whitespace-nowrap",
+            if(@current_tab == "rewards", do: "border-indigo-500 text-indigo-600", else: "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300")
+          ]}
+        >
+          Rewards
+        </button>
       </nav>
     </div>
 
@@ -279,6 +290,32 @@
               <% end %>
             </:action>
           </.table>
+
+        <% "rewards" -> %>
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <%= for reward <- @rewards do %>
+              <div class="bg-white shadow rounded-lg overflow-hidden">
+                <%= if reward.image_url do %>
+                  <img src={reward.image_url} alt={reward.name} class="w-full h-48 object-cover"/>
+                <% end %>
+                <div class="p-4">
+                  <h3 class="text-lg font-medium text-gray-900"><%= reward.name %></h3>
+                  <p class="mt-1 text-sm text-gray-500"><%= reward.description %></p>
+                  <div class="mt-4 flex items-center justify-between">
+                    <span class="text-indigo-600 font-medium"><%= reward.cost %> points</span>
+                    <.button
+                      phx-click="redeem_reward"
+                      phx-value-id={reward.id}
+                      disabled={@child.points < reward.cost}
+                      class={if @child.points < reward.cost, do: "opacity-50 cursor-not-allowed"}
+                    >
+                      Redeem
+                    </.button>
+                  </div>
+                </div>
+              </div>
+            <% end %>
+          </div>
       <% end %>
     </div>
   </div>

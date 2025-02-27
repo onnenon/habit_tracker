@@ -5,12 +5,14 @@ defmodule HabitQuestWeb.ChildLive.Show do
   alias HabitQuest.Tasks
   alias HabitQuest.Tasks.Task
   alias HabitQuest.Children.Child
+  alias HabitQuest.Rewards
   import Ecto.Query
 
   @impl true
   def mount(%{"id" => id}, _session, socket) do
     child = Children.get_child!(id)
     tasks = Tasks.list_tasks_for_child(child)
+    rewards = Rewards.list_rewards_for_child(child)
 
     # Get this week's task completions starting from Monday
     week_start = Date.utc_today() |> Date.beginning_of_week(:monday)
@@ -22,6 +24,7 @@ defmodule HabitQuestWeb.ChildLive.Show do
      |> assign(:page_title, child.name)
      |> assign(:child, child)
      |> assign(:tasks, tasks)
+     |> assign(:rewards, rewards)
      |> assign(:task_completions, task_completions)
      |> assign(:current_week, %{start: week_start, end: week_end})
      |> assign(:current_tab, "daily")} # Set default tab
@@ -180,6 +183,29 @@ defmodule HabitQuestWeb.ChildLive.Show do
         {:noreply,
          socket
          |> put_flash(:error, "Task completion not found")}
+    end
+  end
+
+  @impl true
+  def handle_event("redeem_reward", %{"id" => reward_id}, socket) do
+    reward = Rewards.get_reward!(reward_id)
+    child = socket.assigns.child
+
+    if child.points >= reward.cost do
+      Children.deduct_points(child, reward.cost)
+      updated_child = Children.get_child!(child.id)
+      # Refresh rewards list to update UI state
+      rewards = Rewards.list_rewards_for_child(updated_child)
+
+      {:noreply,
+       socket
+       |> assign(:child, updated_child)
+       |> assign(:rewards, rewards)
+       |> put_flash(:info, "Reward redeemed successfully! Show this to your parent to claim your reward.")}
+    else
+      {:noreply,
+       socket
+       |> put_flash(:error, "Not enough points to redeem this reward")}
     end
   end
 
