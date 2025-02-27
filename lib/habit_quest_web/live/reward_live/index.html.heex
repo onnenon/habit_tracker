@@ -19,7 +19,7 @@
   </:col>
   <:col :let={{_id, reward}} label="Name"><%= reward.name %></:col>
   <:col :let={{_id, reward}} label="Description"><%= reward.description %></:col>
-  <:col :let={{_id, reward}} label="Cost"><%= reward.cost %> points</:col>
+  <:col :let={{_id, reward}} label="Points"><%= reward.points %> points</:col>
   <:col :let={{_id, reward}} label="Available To">
     <%= reward.children |> Enum.map_join(", ", & &1.name) %>
   </:col>

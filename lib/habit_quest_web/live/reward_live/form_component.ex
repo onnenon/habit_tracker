@@ -36,7 +36,7 @@ defmodule HabitQuestWeb.RewardLive.FormComponent do
           <div :if={@url_parsed || @manual_entry} class="space-y-4">
             <.input field={@form[:name]} type="text" label="Name" />
             <.input field={@form[:description]} type="textarea" label="Description" />
-            <.input field={@form[:cost]} type="number" label="Cost" />
+            <.input field={@form[:points]} type="number" label="Points" />
             <.input field={@form[:image_url]} type="url" label="Image URL" />
 
             <div :if={@url_parsed} class="mt-4">

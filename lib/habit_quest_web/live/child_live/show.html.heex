@@ -302,12 +302,12 @@
                   <h3 class="text-lg font-medium text-gray-900"><%= reward.name %></h3>
                   <p class="mt-1 text-sm text-gray-500"><%= reward.description %></p>
                   <div class="mt-4 flex items-center justify-between">
-                    <span class="text-indigo-600 font-medium"><%= reward.cost %> points</span>
+                    <span class="text-indigo-600 font-medium"><%= reward.points %> points</span>
                     <.button
                       phx-click="redeem_reward"
                       phx-value-id={reward.id}
-                      disabled={@child.points < reward.cost}
-                      class={if @child.points < reward.cost, do: "opacity-50 cursor-not-allowed"}
+                      disabled={@child.points < reward.points}
+                      class={if @child.points < reward.points, do: "opacity-50 cursor-not-allowed"}
                     >
                       Redeem
                     </.button>

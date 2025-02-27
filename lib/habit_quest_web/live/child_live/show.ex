@@ -187,8 +187,8 @@ defmodule HabitQuestWeb.ChildLive.Show do
     reward = Rewards.get_reward!(reward_id)
     child = socket.assigns.child
 
-    if child.points >= reward.cost do
-      Children.deduct_points(child, reward.cost)
+    if child.points >= reward.points do
+      Children.deduct_points(child, reward.points)
       updated_child = Children.get_child!(child.id)
       # Refresh rewards list to update UI state
       rewards = Rewards.list_rewards_for_child(updated_child)

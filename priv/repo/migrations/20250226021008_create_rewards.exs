@@ -5,7 +5,7 @@ defmodule HabitQuest.Repo.Migrations.CreateRewards do
     create table(:rewards) do
       add :name, :string
       add :description, :text
-      add :cost, :integer
+      add :points, :integer  # Changed from cost to points
 
       timestamps(type: :utc_datetime)
     end
