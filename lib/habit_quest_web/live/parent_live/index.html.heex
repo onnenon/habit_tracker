@@ -19,6 +19,12 @@
     rows={@children}
     row_click={fn child -> JS.navigate(~p"/children/#{child}") end}
   >
+    <:col :let={child} label="Avatar" class="w-20">
+      <img :if={child.avatar} src={child.avatar} alt={child.name} class="w-10 h-10 rounded-full object-cover"/>
+      <div :if={!child.avatar} class="w-10 h-10 rounded-full bg-zinc-200 flex items-center justify-center">
+        <span class="text-zinc-500 text-lg font-medium"><%= String.first(child.name) %></span>
+      </div>
+    </:col>
     <:col :let={child} label="Name"><%= child.name %></:col>
     <:col :let={child} label="Points"><%= child.points %></:col>
     <:action :let={child}>

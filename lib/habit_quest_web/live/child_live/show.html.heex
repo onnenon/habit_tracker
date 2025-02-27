@@ -1,6 +1,15 @@
 <div class="w-full px-4">
   <.header>
-    <%= @child.name %>'s Dashboard
+    <div class="flex items-center gap-4">
+      <%= if @child.avatar do %>
+        <img src={@child.avatar} alt={@child.name} class="w-16 h-16 rounded-full object-cover"/>
+      <% else %>
+        <div class="w-16 h-16 rounded-full bg-zinc-200 flex items-center justify-center">
+          <span class="text-zinc-500 text-2xl font-medium"><%= String.first(@child.name) %></span>
+        </div>
+      <% end %>
+      <%= @child.name %>'s Dashboard
+    </div>
     <:subtitle>
       <span class="text-3xl font-bold transition-all duration-300 transform" id="points" phx-hook="Points">
         Current Points: <%= @child.points %>

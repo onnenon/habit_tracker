@@ -4,12 +4,13 @@ defmodule HabitQuest.Rewards.ChildReward do
 
   @primary_key false
   schema "children_rewards" do
-    belongs_to :child, HabitQuest.Children.Child
-    belongs_to :reward, HabitQuest.Rewards.Reward
+    belongs_to :child, HabitQuest.Children.Child, primary_key: true
+    belongs_to :reward, HabitQuest.Rewards.Reward, primary_key: true
 
     timestamps(type: :utc_datetime)
   end
 
+  @doc false
   def changeset(child_reward, attrs) do
     child_reward
     |> cast(attrs, [:child_id, :reward_id])

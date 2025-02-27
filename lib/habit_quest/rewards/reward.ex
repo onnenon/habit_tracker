@@ -2,6 +2,8 @@ defmodule HabitQuest.Rewards.Reward do
   use Ecto.Schema
   import Ecto.Changeset
 
+  @compile {:no_warn_undefined, HabitQuest.Rewards.ChildReward}
+
   schema "rewards" do
     field :name, :string
     field :description, :string

@@ -7,6 +7,7 @@ defmodule HabitQuest.Children.Child do
     field :birthday, :date
     field :points, :integer, default: 0
     field :age, :integer, virtual: true
+    field :avatar, :string
 
     many_to_many :tasks, HabitQuest.Tasks.Task,
       join_through: HabitQuest.Tasks.ChildTask,
@@ -24,10 +25,24 @@ defmodule HabitQuest.Children.Child do
   @doc false
   def changeset(child, attrs) do
     child
-    |> cast(attrs, [:name, :birthday, :points])
+    |> cast(attrs, [:name, :birthday, :points, :avatar])
     |> validate_required([:name, :birthday])
+    |> validate_url(:avatar)
     |> compute_age()
   end
+
+  defp validate_url(changeset, field) when is_atom(field) do
+    validate_change(changeset, field, fn _, url ->
+      if is_nil(url) || is_valid_url?(url), do: [], else: [{field, "must be a valid URL"}]
+    end)
+  end
+
+  defp is_valid_url?(nil), do: true
+  defp is_valid_url?(url) when is_binary(url) do
+    uri = URI.parse(url)
+    !is_nil(uri.scheme) && !is_nil(uri.host) && uri.scheme in ~w(http https)
+  end
+  defp is_valid_url?(_), do: false
 
   defp compute_age(changeset) do
     case get_field(changeset, :birthday) do

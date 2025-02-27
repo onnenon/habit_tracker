@@ -19,9 +19,21 @@ defmodule HabitQuestWeb.ChildLive.FormComponent do
         phx-change="validate"
         phx-submit="save"
       >
-        <.input field={@form[:name]} type="text" label="Name" />
-        <.input field={@form[:birthday]} type="date" label="Birthday" />
-        <.input field={@form[:points]} type="number" label="Points" value="0" />
+        <div class="space-y-8">
+          <div :if={@form.data.avatar} class="mt-2">
+            <img src={@form.data.avatar} alt="" class="w-20 h-20 rounded-full object-cover"/>
+          </div>
+
+          <.input field={@form[:name]} type="text" label="Name" />
+          <.input field={@form[:birthday]} type="date" label="Birthday" />
+          <.input field={@form[:points]} type="number" label="Points" value="0" />
+          <.input
+            field={@form[:avatar]}
+            type="url"
+            label="Avatar URL"
+            placeholder="https://example.com/avatar.jpg"
+          />
+        </div>
         <:actions>
           <.button phx-disable-with="Saving...">Save Child</.button>
         </:actions>

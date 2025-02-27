@@ -72,9 +72,18 @@
         <div :for={{id, child} <- @streams.children} id={id} class="bg-white shadow overflow-hidden rounded-lg">
           <div class="px-6 py-5">
             <div class="flex items-center justify-between">
-              <div>
-                <h3 class="text-lg font-medium text-gray-900"><%= child.name %></h3>
-                <p class="mt-1 text-sm text-gray-500">Age: <%= child.age %> | Points: <%= child.points %></p>
+              <div class="flex items-center gap-4">
+                <%= if child.avatar do %>
+                  <img src={child.avatar} alt={child.name} class="w-12 h-12 rounded-full object-cover"/>
+                <% else %>
+                  <div class="w-12 h-12 rounded-full bg-zinc-200 flex items-center justify-center">
+                    <span class="text-zinc-500 text-lg font-medium"><%= String.first(child.name) %></span>
+                  </div>
+                <% end %>
+                <div>
+                  <h3 class="text-lg font-medium text-gray-900"><%= child.name %></h3>
+                  <p class="mt-1 text-sm text-gray-500">Age: <%= child.age %> | Points: <%= child.points %></p>
+                </div>
               </div>
               <.link navigate={~p"/children/#{child.id}"} class="bg-green-600 px-4 py-2 rounded-md text-white hover:bg-green-700">
                 View Dashboard
