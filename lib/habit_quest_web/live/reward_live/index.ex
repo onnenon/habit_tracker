@@ -41,6 +41,18 @@ defmodule HabitQuestWeb.RewardLive.Index do
   end
 
   @impl true
+  def handle_event("parse_url", params, socket) do
+    if socket.assigns.live_action in [:new, :edit] do
+      send_update(HabitQuestWeb.RewardLive.FormComponent,
+        id: socket.assigns.reward.id || :new,
+        event: "parse_url",
+        params: params
+      )
+    end
+    {:noreply, socket}
+  end
+
+  @impl true
   def handle_event("delete", %{"id" => id}, socket) do
     reward = Rewards.get_reward!(id)
     {:ok, _} = Rewards.delete_reward(reward)

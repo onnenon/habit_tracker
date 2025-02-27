@@ -47,14 +47,25 @@ defmodule HabitQuestWeb.ChildLive.Index do
     child = Children.get_child!(id)
     {:ok, _} = Children.delete_child(child)
 
-    {:noreply, stream_delete(socket, :children, child)}
+    # Refresh the entire children list after deletion
+    children = Children.list_children()
+    |> Enum.map(fn child ->
+      Child.changeset(child, %{})
+      |> Ecto.Changeset.apply_changes()
+    end)
+
+    {:noreply, stream(socket, :children, children, reset: true)}
   end
 
   @impl true
-  def handle_info({HabitQuestWeb.ChildLive.FormComponent, {:saved, child}}, socket) do
-    child = Child.changeset(child, %{})
-    |> Ecto.Changeset.apply_changes()
+  def handle_info({HabitQuestWeb.ChildLive.FormComponent, {:saved, _child}}, socket) do
+    # Refresh the entire children list to ensure we have all children
+    children = Children.list_children()
+    |> Enum.map(fn child ->
+      Child.changeset(child, %{})
+      |> Ecto.Changeset.apply_changes()
+    end)
 
-    {:noreply, stream_insert(socket, :children, child)}
+    {:noreply, stream(socket, :children, children, reset: true)}
   end
 end
