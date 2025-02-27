@@ -1,6 +1,5 @@
 defmodule HabitQuest.Scheduler do
   use GenServer
-  alias HabitQuest.Tasks
 
   def start_link(_opts) do
     GenServer.start_link(__MODULE__, %{})

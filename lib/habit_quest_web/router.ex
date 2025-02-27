@@ -28,6 +28,7 @@ defmodule HabitQuestWeb.Router do
     live "/tasks", TaskLive.Index, :index
     live "/tasks/new", TaskLive.Index, :new
     live "/tasks/:id/edit", TaskLive.Index, :edit
+    live "/tasks/:id", TaskLive.Show, :show
 
     # Child management routes (for parents)
     live "/children", ChildLive.Index, :index

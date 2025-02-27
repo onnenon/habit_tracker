@@ -18,7 +18,7 @@
   <:col :let={{_id, task}} label="Type">
     <%= String.replace(task.task_type, "_", " ") |> String.capitalize() %>
   </:col>
-  <:action :let={{id, task}}>
+  <:action :let={{_id, task}}>
     <div class="sr-only">
       <.link navigate={~p"/tasks/#{task}"}>Show</.link>
     </div>

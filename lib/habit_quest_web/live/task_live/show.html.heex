@@ -1,0 +1,16 @@
+<.header>
+  Task <%= @task.name %>
+  <:actions>
+    <.link patch={~p"/tasks/#{@task}/edit"} phx-click={JS.push_focus()}>
+      <.button>Edit task</.button>
+    </.link>
+  </:actions>
+</.header>
+
+<.list>
+  <:item title="Name"><%= @task.name %></:item>
+  <:item title="Description"><%= @task.description %></:item>
+  <:item title="Points"><%= @task.points %></:item>
+</.list>
+
+<.back navigate={~p"/tasks"}>Back to tasks</.back>
