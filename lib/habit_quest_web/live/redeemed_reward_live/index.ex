@@ -22,7 +22,7 @@ defmodule HabitQuestWeb.RedeemedRewardLive.Index do
   @impl true
   def handle_event("mark_fulfilled", %{"id" => id}, socket) do
     redeemed_reward = Rewards.get_redeemed_reward!(id)
-    {:ok, updated_reward} = Rewards.update_redeemed_reward(redeemed_reward, %{
+    {:ok, _updated_reward} = Rewards.update_redeemed_reward(redeemed_reward, %{
       fulfilled: true,
       fulfilled_at: DateTime.utc_now()
     })
