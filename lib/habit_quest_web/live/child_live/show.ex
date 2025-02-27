@@ -3,10 +3,7 @@ defmodule HabitQuestWeb.ChildLive.Show do
 
   alias HabitQuest.Children
   alias HabitQuest.Tasks
-  alias HabitQuest.Tasks.Task
-  alias HabitQuest.Children.Child
   alias HabitQuest.Rewards
-  import Ecto.Query
 
   @impl true
   def mount(%{"id" => id}, _session, socket) do
@@ -27,7 +24,8 @@ defmodule HabitQuestWeb.ChildLive.Show do
      |> assign(:rewards, rewards)
      |> assign(:task_completions, task_completions)
      |> assign(:current_week, %{start: week_start, end: week_end})
-     |> assign(:current_tab, "daily")} # Set default tab
+     |> assign(:current_tab, "daily")
+     |> assign(:unfulfilled_rewards, [])}  # Add this line
   end
 
   @impl true
@@ -37,13 +35,18 @@ defmodule HabitQuestWeb.ChildLive.Show do
     week_start = socket.assigns.current_week.start
     week_end = socket.assigns.current_week.end
     task_completions = Tasks.list_task_completions_in_range(child.id, week_start, week_end)
+    rewards = Rewards.list_rewards_for_child(child)
+    unfulfilled_rewards = Rewards.list_redeemed_rewards(false)
+      |> Enum.filter(& &1.child_id == child.id)
 
     {:noreply,
      socket
      |> assign(:page_title, "#{child.name}'s Dashboard")
      |> assign(:child, child)
      |> assign(:tasks, tasks)
-     |> assign(:task_completions, task_completions)}
+     |> assign(:task_completions, task_completions)
+     |> assign(:rewards, rewards)
+     |> assign(:unfulfilled_rewards, unfulfilled_rewards)}
   end
 
   @impl true
@@ -199,18 +202,45 @@ defmodule HabitQuestWeb.ChildLive.Show do
         fulfilled: false
       })
 
-      # Refresh rewards list to update UI state
+      # Refresh rewards list and unfulfilled rewards to update UI state
       rewards = Rewards.list_rewards_for_child(updated_child)
+      unfulfilled_rewards = Rewards.list_redeemed_rewards(false)
+        |> Enum.filter(& &1.child_id == child.id)
 
       {:noreply,
        socket
        |> assign(:child, updated_child)
        |> assign(:rewards, rewards)
+       |> assign(:unfulfilled_rewards, unfulfilled_rewards)
        |> put_flash(:info, "Reward redeemed successfully! Show this to your parent to claim your reward.")}
     else
       {:noreply,
        socket
        |> put_flash(:error, "Not enough points to redeem this reward")}
+    end
+  end
+
+  @impl true
+  def handle_event("cancel_reward", %{"id" => id}, socket) do
+    redeemed_reward = Rewards.get_redeemed_reward!(id)
+
+    case Rewards.cancel_redeemed_reward(redeemed_reward) do
+      {:ok, _} ->
+        # Refresh the child and unfulfilled rewards
+        child = Children.get_child!(socket.assigns.child.id)
+        unfulfilled_rewards = Rewards.list_redeemed_rewards(false)
+          |> Enum.filter(& &1.child_id == child.id)
+
+        {:noreply,
+         socket
+         |> assign(:child, child)
+         |> assign(:unfulfilled_rewards, unfulfilled_rewards)
+         |> put_flash(:info, "Reward cancelled and points refunded successfully.")}
+
+      {:error, :already_fulfilled} ->
+        {:noreply,
+         socket
+         |> put_flash(:error, "Cannot cancel a fulfilled reward.")}
     end
   end
 

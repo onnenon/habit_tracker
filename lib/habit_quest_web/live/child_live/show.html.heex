@@ -292,29 +292,68 @@
           </.table>
 
         <% "rewards" -> %>
-          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            <%= for reward <- @rewards do %>
-              <div class="bg-white shadow rounded-lg overflow-hidden">
-                <%= if reward.image_url do %>
-                  <img src={reward.image_url} alt={reward.name} class="w-full h-48 object-cover"/>
-                <% end %>
-                <div class="p-4">
-                  <h3 class="text-lg font-medium text-gray-900"><%= reward.name %></h3>
-                  <p class="mt-1 text-sm text-gray-500"><%= reward.description %></p>
-                  <div class="mt-4 flex items-center justify-between">
-                    <span class="text-indigo-600 font-medium"><%= reward.points %> points</span>
-                    <.button
-                      phx-click="redeem_reward"
-                      phx-value-id={reward.id}
-                      disabled={@child.points < reward.points}
-                      class={if @child.points < reward.points, do: "opacity-50 cursor-not-allowed"}
-                    >
-                      Redeem
-                    </.button>
-                  </div>
+          <div class="space-y-8">
+            <%= if length(@unfulfilled_rewards) > 0 do %>
+              <div>
+                <h3 class="text-lg font-medium text-gray-900 mb-4">Pending Rewards</h3>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  <%= for redeemed_reward <- @unfulfilled_rewards do %>
+                    <div class="bg-white shadow rounded-lg overflow-hidden border border-yellow-100">
+                      <%= if redeemed_reward.reward.image_url do %>
+                        <img src={redeemed_reward.reward.image_url} alt={redeemed_reward.reward.name} class="w-full h-48 object-cover"/>
+                      <% end %>
+                      <div class="p-4">
+                        <div class="flex items-center justify-between mb-2">
+                          <h3 class="text-lg font-medium text-gray-900"><%= redeemed_reward.reward.name %></h3>
+                          <span class="px-2 py-1 text-xs font-medium rounded-full bg-yellow-100 text-yellow-800">
+                            Pending
+                          </span>
+                        </div>
+                        <p class="mt-1 text-sm text-gray-500"><%= redeemed_reward.reward.description %></p>
+                        <div class="mt-4 flex items-center justify-between">
+                          <span class="text-indigo-600 font-medium"><%= redeemed_reward.reward.points %> points</span>
+                          <.button
+                            phx-click="cancel_reward"
+                            phx-value-id={redeemed_reward.id}
+                            class="bg-red-600 hover:bg-red-700"
+                          >
+                            Cancel
+                          </.button>
+                        </div>
+                      </div>
+                    </div>
+                  <% end %>
                 </div>
               </div>
             <% end %>
+
+            <div>
+              <h3 class="text-lg font-medium text-gray-900 mb-4">Available Rewards</h3>
+              <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                <%= for reward <- @rewards do %>
+                  <div class="bg-white shadow rounded-lg overflow-hidden">
+                    <%= if reward.image_url do %>
+                      <img src={reward.image_url} alt={reward.name} class="w-full h-48 object-cover"/>
+                    <% end %>
+                    <div class="p-4">
+                      <h3 class="text-lg font-medium text-gray-900"><%= reward.name %></h3>
+                      <p class="mt-1 text-sm text-gray-500"><%= reward.description %></p>
+                      <div class="mt-4 flex items-center justify-between">
+                        <span class="text-indigo-600 font-medium"><%= reward.points %> points</span>
+                        <.button
+                          phx-click="redeem_reward"
+                          phx-value-id={reward.id}
+                          disabled={@child.points < reward.points}
+                          class={if @child.points < reward.points, do: "opacity-50 cursor-not-allowed"}
+                        >
+                          Redeem
+                        </.button>
+                      </div>
+                    </div>
+                  </div>
+                <% end %>
+              </div>
+            </div>
           </div>
       <% end %>
     </div>

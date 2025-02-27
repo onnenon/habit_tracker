@@ -109,6 +109,25 @@ defmodule HabitQuest.Rewards do
     |> Repo.preload([:child, :reward])
   end
 
+  @doc """
+  Cancels a redeemed reward and refunds points to the child.
+  Returns {:ok, redeemed_reward} on success or {:error, reason} on failure.
+  """
+  def cancel_redeemed_reward(%RedeemedReward{} = redeemed_reward) do
+    if redeemed_reward.fulfilled do
+      {:error, :already_fulfilled}
+    else
+      Repo.transaction(fn ->
+        # Refund points to the child
+        child = HabitQuest.Children.get_child!(redeemed_reward.child_id)
+        HabitQuest.Children.award_points(child, redeemed_reward.reward.points)
+
+        # Delete the redeemed reward
+        Repo.delete!(redeemed_reward)
+      end)
+    end
+  end
+
   defp put_children(changeset, nil), do: changeset
   defp put_children(changeset, child_ids) when is_list(child_ids) do
     # Ensure we're working with valid integer IDs
