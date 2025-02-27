@@ -69,6 +69,7 @@ defmodule HabitQuestWeb.RewardLive.FormComponent do
 
   @impl true
   def update(%{reward: reward} = assigns, socket) do
+    reward = Map.put(reward, :child_ids, Enum.map(reward.children, & &1.id))
     changeset = Rewards.change_reward(reward)
 
     {
@@ -108,7 +109,7 @@ defmodule HabitQuestWeb.RewardLive.FormComponent do
 
     # Handle file upload
     reward_params = case uploaded_entries(socket, :reward_image) do
-      {[_|_] = entries, []} ->
+      {[_|_], []} ->
         uploaded_path = Path.join([:code.priv_dir(:habit_quest), "static", "uploads"])
         File.mkdir_p!(uploaded_path)
 

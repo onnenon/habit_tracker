@@ -24,7 +24,7 @@ defmodule HabitQuest.Rewards.Reward do
   @doc false
   def changeset(reward, attrs) do
     reward
-    |> cast(attrs, [:name, :description, :points, :image])
+    |> cast(attrs, [:name, :description, :points, :image, :child_ids])
     |> validate_required([:name, :description, :points])
   end
 end

@@ -31,9 +31,12 @@ defmodule HabitQuest.Rewards do
   Gets a single reward.
   """
   def get_reward!(id) do
-    Reward
+    reward = Reward
     |> Repo.get!(id)
     |> Repo.preload(:children)
+
+    # Initialize the virtual child_ids field
+    Map.put(reward, :child_ids, Enum.map(reward.children, & &1.id))
   end
 
   @doc """
