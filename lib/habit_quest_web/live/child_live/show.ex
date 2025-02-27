@@ -190,6 +190,15 @@ defmodule HabitQuestWeb.ChildLive.Show do
     if child.points >= reward.points do
       Children.deduct_points(child, reward.points)
       updated_child = Children.get_child!(child.id)
+
+      # Create redeemed reward entry
+      {:ok, _redeemed_reward} = Rewards.create_redeemed_reward(%{
+        child_id: child.id,
+        reward_id: reward.id,
+        redeemed_at: DateTime.utc_now(),
+        fulfilled: false
+      })
+
       # Refresh rewards list to update UI state
       rewards = Rewards.list_rewards_for_child(updated_child)
 

@@ -1,0 +1,76 @@
+<.header>
+  Redeemed Rewards
+  <:actions>
+    <div class="flex items-center gap-4">
+      <label class="flex items-center gap-2">
+        <input
+          type="checkbox"
+          checked={@show_fulfilled}
+          phx-click="toggle_fulfilled"
+          class="rounded border-zinc-300 text-zinc-900 focus:ring-0"
+        />
+        <span class="text-sm">Show fulfilled rewards</span>
+      </label>
+    </div>
+  </:actions>
+</.header>
+
+<div class="mt-8">
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+    <%= for redeemed_reward <- @redeemed_rewards do %>
+      <div class="bg-white shadow rounded-lg overflow-hidden">
+        <%= if redeemed_reward.reward.image_url do %>
+          <img src={redeemed_reward.reward.image_url} alt={redeemed_reward.reward.name} class="w-full h-48 object-cover"/>
+        <% end %>
+        <div class="p-4">
+          <div class="flex items-center justify-between mb-2">
+            <h3 class="text-lg font-medium text-gray-900"><%= redeemed_reward.reward.name %></h3>
+            <span class={[
+              "px-2 py-1 text-xs font-medium rounded-full",
+              if(redeemed_reward.fulfilled, do: "bg-green-100 text-green-800", else: "bg-yellow-100 text-yellow-800")
+            ]}>
+              <%= if redeemed_reward.fulfilled, do: "Fulfilled", else: "Pending" %>
+            </span>
+          </div>
+          <p class="text-sm text-gray-500 mb-2"><%= redeemed_reward.reward.description %></p>
+          <div class="mt-4 space-y-2">
+            <div class="flex items-center justify-between text-sm">
+              <span class="text-gray-600">Redeemed by:</span>
+              <span class="font-medium"><%= redeemed_reward.child.name %></span>
+            </div>
+            <div class="flex items-center justify-between text-sm">
+              <span class="text-gray-600">Redeemed at:</span>
+              <span class="font-medium"><%= Calendar.strftime(redeemed_reward.redeemed_at, "%B %d, %Y %I:%M %p") %></span>
+            </div>
+            <%= if redeemed_reward.fulfilled_at do %>
+              <div class="flex items-center justify-between text-sm">
+                <span class="text-gray-600">Fulfilled at:</span>
+                <span class="font-medium"><%= Calendar.strftime(redeemed_reward.fulfilled_at, "%B %d, %Y %I:%M %p") %></span>
+              </div>
+            <% end %>
+          </div>
+          <%= unless redeemed_reward.fulfilled do %>
+            <div class="mt-4">
+              <.button phx-click="mark_fulfilled" phx-value-id={redeemed_reward.id} class="w-full">
+                Mark as Fulfilled
+              </.button>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    <% end %>
+  </div>
+
+  <%= if Enum.empty?(@redeemed_rewards) do %>
+    <div class="text-center py-12">
+      <h3 class="text-lg font-medium text-gray-900">No redeemed rewards found</h3>
+      <p class="mt-2 text-sm text-gray-500">
+        <%= if @show_fulfilled do %>
+          There are no redeemed rewards to display.
+        <% else %>
+          There are no pending rewards to fulfill.
+        <% end %>
+      </p>
+    </div>
+  <% end %>
+</div>

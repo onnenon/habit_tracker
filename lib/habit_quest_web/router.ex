@@ -39,6 +39,9 @@ defmodule HabitQuestWeb.Router do
     live "/rewards", RewardLive.Index, :index
     live "/rewards/new", RewardLive.Index, :new
     live "/rewards/:id/edit", RewardLive.Index, :edit
+
+    # Redeemed rewards routes
+    live "/redeemed-rewards", RedeemedRewardLive.Index, :index
   end
 
   # Other scopes may use custom stacks.

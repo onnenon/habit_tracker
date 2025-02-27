@@ -5,7 +5,7 @@ defmodule HabitQuest.Rewards.Reward do
   schema "rewards" do
     field :name, :string
     field :description, :string
-    field :points, :integer  # Changed from cost to points
+    field :points, :integer
     field :image_url, :string
     field :child_ids, {:array, :integer}, virtual: true
 
@@ -14,14 +14,16 @@ defmodule HabitQuest.Rewards.Reward do
       on_replace: :delete,
       on_delete: :delete_all
 
+    has_many :redeemed_rewards, HabitQuest.Rewards.RedeemedReward
+
     timestamps(type: :utc_datetime)
   end
 
   @doc false
   def changeset(reward, attrs) do
     reward
-    |> cast(attrs, [:name, :description, :points, :image_url])  # Changed from cost to points
-    |> validate_required([:name, :description, :points])  # Changed from cost to points
+    |> cast(attrs, [:name, :description, :points, :image_url])
+    |> validate_required([:name, :description, :points])
     |> validate_url(:image_url)
   end
 

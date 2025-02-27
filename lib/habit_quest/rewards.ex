@@ -7,6 +7,7 @@ defmodule HabitQuest.Rewards do
   alias HabitQuest.Repo
   alias HabitQuest.Rewards.Reward
   alias HabitQuest.Children.Child
+  alias HabitQuest.Rewards.RedeemedReward
 
   @doc """
   Returns the list of rewards.
@@ -69,11 +70,49 @@ defmodule HabitQuest.Rewards do
     Reward.changeset(reward, attrs)
   end
 
+  @doc """
+  Creates a redeemed reward entry.
+  """
+  def create_redeemed_reward(attrs \\ %{}) do
+    %RedeemedReward{}
+    |> RedeemedReward.changeset(attrs)
+    |> Repo.insert()
+  end
+
+  @doc """
+  Lists all redeemed rewards with preloaded associations.
+  Optional parameter to filter by fulfilled status.
+  """
+  def list_redeemed_rewards(fulfilled \\ nil) do
+    RedeemedReward
+    |> maybe_filter_by_fulfilled(fulfilled)
+    |> order_by([r], desc: r.redeemed_at)
+    |> preload([:child, :reward])
+    |> Repo.all()
+  end
+
+  @doc """
+  Updates a redeemed reward's fulfilled status.
+  """
+  def update_redeemed_reward(%RedeemedReward{} = redeemed_reward, attrs) do
+    redeemed_reward
+    |> RedeemedReward.changeset(attrs)
+    |> Repo.update()
+  end
+
+  @doc """
+  Gets a single redeemed reward with preloaded associations.
+  """
+  def get_redeemed_reward!(id) do
+    RedeemedReward
+    |> Repo.get!(id)
+    |> Repo.preload([:child, :reward])
+  end
+
   defp put_children(changeset, nil), do: changeset
   defp put_children(changeset, child_ids) when is_list(child_ids) do
     # Ensure we're working with valid integer IDs
     valid_ids = child_ids
-    |> Enum.filter(&(&1 != nil))
     |> Enum.map(&to_integer/1)
     |> Enum.filter(&(&1 != nil))
 
@@ -93,4 +132,10 @@ defmodule HabitQuest.Rewards do
     end
   end
   defp to_integer(_), do: nil
+
+  # Private helper for filtering by fulfilled status
+  defp maybe_filter_by_fulfilled(query, nil), do: query
+  defp maybe_filter_by_fulfilled(query, fulfilled) when is_boolean(fulfilled) do
+    where(query, [r], r.fulfilled == ^fulfilled)
+  end
 end
