@@ -60,12 +60,28 @@ defmodule HabitQuest.Tasks do
   Completes a task for a child on a specific date.
   For weekly tasks, this creates a task completion record.
   For punch card tasks, this increments the completion counter.
+  For one-off tasks, this marks them as completed.
   """
   def complete_task(%Task{} = task, %Child{} = child, completion_date \\ nil) do
-    Ecto.Multi.new()
-    |> maybe_create_task_completion(task, child, completion_date)
-    |> maybe_update_punch_card(task, child)
-    |> Repo.transaction()
+    case task.task_type do
+      "one_off" ->
+        # For one-off tasks, just mark them as completed
+        Ecto.Multi.new()
+        |> Ecto.Multi.update(:task, Task.changeset(task, %{completed: true}))
+        |> Repo.transaction()
+
+      "weekly" ->
+        # For weekly tasks, create a completion record for the specific date
+        Ecto.Multi.new()
+        |> maybe_create_task_completion(task, child, completion_date)
+        |> Repo.transaction()
+
+      "punch_card" ->
+        # For punch cards, update the counter and create completion record if fully completed
+        Ecto.Multi.new()
+        |> maybe_update_punch_card(task, child)
+        |> Repo.transaction()
+    end
   end
 
   defp maybe_create_task_completion(multi, %Task{task_type: "weekly"} = task, child, completion_date) do

@@ -7,13 +7,11 @@ defmodule HabitQuest.Tasks.Task do
     field :title, :string
     field :points, :integer
     field :task_type, :string, default: "one_off"
-    field :recurring, :boolean, default: false
-    field :recurring_interval, :integer
-    field :recurring_period, :string
     field :completions_required, :integer
     field :current_completions, :integer, default: 0
     field :schedule_days, {:array, :string}
     field :child_ids, {:array, :integer}, virtual: true
+    field :completed, :boolean, default: false
 
     many_to_many :children, HabitQuest.Children.Child,
       join_through: HabitQuest.Tasks.ChildTask,
@@ -26,7 +24,6 @@ defmodule HabitQuest.Tasks.Task do
   end
 
   @task_types ~w(one_off punch_card weekly)
-  @recurring_periods ~w(days weeks months)
   @days_of_week ~w(monday tuesday wednesday thursday friday saturday sunday)
 
   def task_type_options do
@@ -35,10 +32,6 @@ defmodule HabitQuest.Tasks.Task do
       {"Punch Card Task", "punch_card"},
       {"Weekly Schedule", "weekly"}
     ]
-  end
-
-  def recurring_period_options do
-    Enum.map(@recurring_periods, &{String.capitalize(&1), &1})
   end
 
   def days_of_week_options do
@@ -53,13 +46,11 @@ defmodule HabitQuest.Tasks.Task do
       :description,
       :points,
       :task_type,
-      :recurring,
-      :recurring_interval,
-      :recurring_period,
       :completions_required,
       :current_completions,
       :schedule_days,
-      :child_ids
+      :child_ids,
+      :completed
     ])
     |> validate_required([:title, :description, :points, :task_type])
     |> validate_inclusion(:task_type, @task_types)
