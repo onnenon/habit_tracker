@@ -58,6 +58,46 @@ defmodule HabitQuestWeb.RewardLive.FormComponent do
                 </div>
               </label>
             </div>
+
+            <div class="mt-4">
+              <%= for entry <- @uploads.reward_image.entries do %>
+                <div class="mb-4">
+                  <div class="flex items-center gap-4">
+                    <div class="flex-1">
+                      <div class="text-sm text-zinc-600 mb-1">{entry.client_name}</div>
+                      <div class="w-full bg-zinc-200 rounded-full h-2.5">
+                        <div
+                          class="bg-zinc-600 h-2.5 rounded-full transition-all"
+                          style={"width: #{entry.progress}%"}
+                        >
+                        </div>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      phx-click="cancel-upload"
+                      phx-value-ref={entry.ref}
+                      phx-target={@myself}
+                      class="text-zinc-500 hover:text-zinc-700"
+                    >
+                      <.icon name="hero-x-mark" class="h-5 w-5" />
+                    </button>
+                  </div>
+
+                  <%= for err <- upload_errors(@uploads.reward_image, entry) do %>
+                    <div class="mt-1 text-sm text-red-600">
+                      {error_to_string(err)}
+                    </div>
+                  <% end %>
+                </div>
+              <% end %>
+
+              <%= for err <- upload_errors(@uploads.reward_image) do %>
+                <div class="mt-1 text-sm text-red-600">
+                  {error_to_string(err)}
+                </div>
+              <% end %>
+            </div>
           </div>
 
           <div class="space-y-2">
@@ -122,6 +162,11 @@ defmodule HabitQuestWeb.RewardLive.FormComponent do
       |> Map.put(:action, :validate)
 
     {:noreply, assign_form(socket, changeset)}
+  end
+
+  @impl true
+  def handle_event("cancel-upload", %{"ref" => ref}, socket) do
+    {:noreply, cancel_upload(socket, :reward_image, ref)}
   end
 
   @impl true
@@ -212,4 +257,10 @@ defmodule HabitQuestWeb.RewardLive.FormComponent do
   end
 
   defp safe_to_integer(_), do: nil
+
+  # Add helper function for converting error atoms to user-friendly strings
+  defp error_to_string(:too_large), do: "File is too large (max 5MB)"
+  defp error_to_string(:too_many_files), do: "You can only upload one image"
+  defp error_to_string(:not_accepted), do: "You can only upload images (.jpg, .jpeg, .png, .webp)"
+  defp error_to_string(_), do: "Invalid file"
 end
