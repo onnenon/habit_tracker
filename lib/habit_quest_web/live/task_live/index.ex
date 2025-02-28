@@ -7,26 +7,23 @@ defmodule HabitQuestWeb.TaskLive.Index do
 
   @impl true
   def mount(_params, _session, socket) do
-    tasks = list_tasks()
-    children = list_children()
-
     {:ok,
      socket
-     |> stream(:tasks, tasks)
-     |> assign(:children, children)
+     |> stream(:completed_tasks, [])
+     |> stream(:incomplete_tasks, [])
+     |> assign(:children, list_children())
      |> assign(:selected_tab, "habits")}
   end
 
   @impl true
   def handle_params(params, _url, socket) do
     tab = Map.get(params, "tab", "habits")
-    tasks = list_tasks()
-    filtered_tasks = filter_tasks(tasks, tab)
+    tasks = list_tasks_with_completions()
 
     socket =
       socket
       |> assign(:selected_tab, tab)
-      |> stream(:tasks, filtered_tasks, reset: true)
+      |> handle_task_grouping(tasks, tab)
 
     {:noreply, apply_action(socket, socket.assigns.live_action, params)}
   end
@@ -46,7 +43,6 @@ defmodule HabitQuestWeb.TaskLive.Index do
   defp apply_action(socket, :edit, %{"id" => id}) do
     task =
       Tasks.get_task!(id)
-      # Ensure children are preloaded
       |> HabitQuest.Repo.preload(:children)
 
     socket
@@ -59,35 +55,51 @@ defmodule HabitQuestWeb.TaskLive.Index do
     task = Tasks.get_task!(id)
     {:ok, _} = Tasks.delete_task(task)
 
-    # Refresh tasks with current filter
-    tasks = list_tasks()
-    filtered_tasks = filter_tasks(tasks, socket.assigns.selected_tab)
-    {:noreply, stream(socket, :tasks, filtered_tasks, reset: true)}
+    tasks = list_tasks_with_completions()
+    {:noreply, handle_task_grouping(socket, tasks, socket.assigns.selected_tab)}
   end
 
   @impl true
   def handle_info({HabitQuestWeb.TaskLive.FormComponent, {:saved, _task}}, socket) do
-    # Refresh tasks with current filter
-    tasks = list_tasks()
-    filtered_tasks = filter_tasks(tasks, socket.assigns.selected_tab)
-    {:noreply, stream(socket, :tasks, filtered_tasks, reset: true)}
+    tasks = list_tasks_with_completions()
+    {:noreply, handle_task_grouping(socket, tasks, socket.assigns.selected_tab)}
   end
 
-  defp list_tasks do
+  defp list_tasks_with_completions do
     Tasks.list_tasks()
+    |> HabitQuest.Repo.preload([
+      :children,
+      one_off_task_completions: [:child],
+      task_completions: [:child]
+    ])
   end
 
   defp list_children do
     Children.list_children()
   end
 
-  defp filter_tasks(tasks, "one-off") do
-    Enum.filter(tasks, fn task -> task.task_type == "one_off" end)
+  defp handle_task_grouping(socket, tasks, "one-off") do
+    one_off_tasks = Enum.filter(tasks, fn task -> task.task_type == "one_off" end)
+
+    {completed, incomplete} =
+      Enum.split_with(one_off_tasks, fn task ->
+        children_count = length(task.children)
+        completions_count = length(task.one_off_task_completions)
+        children_count > 0 && completions_count == children_count
+      end)
+
+    socket
+    |> stream(:completed_tasks, completed, reset: true)
+    |> stream(:incomplete_tasks, incomplete, reset: true)
   end
 
-  defp filter_tasks(tasks, "habits") do
-    Enum.filter(tasks, fn task -> task.task_type in ["weekly", "punch_card"] end)
+  defp handle_task_grouping(socket, tasks, "habits") do
+    habit_tasks = Enum.filter(tasks, fn task -> task.task_type in ["weekly", "punch_card"] end)
+
+    socket
+    |> stream(:incomplete_tasks, habit_tasks, reset: true)
+    |> stream(:completed_tasks, [], reset: true)
   end
 
-  defp filter_tasks(tasks, _), do: tasks
+  defp handle_task_grouping(socket, _tasks, _), do: socket
 end

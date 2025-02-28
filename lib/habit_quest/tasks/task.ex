@@ -18,6 +18,7 @@ defmodule HabitQuest.Tasks.Task do
       on_delete: :delete_all
 
     has_many :task_completions, HabitQuest.Tasks.TaskCompletion
+    has_many :one_off_task_completions, HabitQuest.Tasks.OneOffTaskCompletion
 
     timestamps(type: :utc_datetime)
   end
