@@ -50,7 +50,7 @@
           class={[
             "py-4 px-1 border-b-2 font-medium text-sm whitespace-nowrap",
             if(@current_tab == "daily",
-              do: "border-indigo-500 text-indigo-600",
+              do: "border-zinc-500 text-zinc-600",
               else: "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
             )
           ]}
@@ -63,7 +63,7 @@
           class={[
             "py-4 px-1 border-b-2 font-medium text-sm whitespace-nowrap",
             if(@current_tab == "punch_cards",
-              do: "border-indigo-500 text-indigo-600",
+              do: "border-zinc-500 text-zinc-600",
               else: "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
             )
           ]}
@@ -76,7 +76,7 @@
           class={[
             "py-4 px-1 border-b-2 font-medium text-sm whitespace-nowrap",
             if(@current_tab == "other",
-              do: "border-indigo-500 text-indigo-600",
+              do: "border-zinc-500 text-zinc-600",
               else: "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
             )
           ]}
@@ -90,7 +90,7 @@
           class={[
             "py-4 px-1 border-b-2 font-medium text-sm whitespace-nowrap",
             if(@current_tab == "rewards",
-              do: "border-indigo-500 text-indigo-600",
+              do: "border-zinc-500 text-zinc-600",
               else: "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
             )
           ]}
@@ -403,7 +403,7 @@
                           {redeemed_reward.reward.description}
                         </p>
                         <div class="mt-4 flex items-center justify-between">
-                          <span class="text-indigo-600 font-medium">
+                          <span class="text-zinc-600 font-medium">
                             {redeemed_reward.reward.points} points
                           </span>
                           <.button
@@ -450,7 +450,7 @@
                       <h3 class="text-lg font-medium text-gray-900">{reward.name}</h3>
                       <p class="mt-1 text-sm text-gray-500">{reward.description}</p>
                       <div class="mt-4 flex items-center justify-between">
-                        <span class="text-indigo-600 font-medium">{reward.points} points</span>
+                        <span class="text-zinc-600 font-medium">{reward.points} points</span>
                         <.button
                           phx-click="redeem_reward"
                           phx-value-id={reward.id}
