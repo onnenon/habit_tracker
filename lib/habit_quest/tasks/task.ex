@@ -11,6 +11,7 @@ defmodule HabitQuest.Tasks.Task do
     field :current_completions, :integer, default: 0
     field :schedule_days, {:array, :string}
     field :child_ids, {:array, :integer}, virtual: true
+    field :completed_at, :utc_datetime, virtual: true
 
     many_to_many :children, HabitQuest.Children.Child,
       join_through: HabitQuest.Tasks.ChildTask,

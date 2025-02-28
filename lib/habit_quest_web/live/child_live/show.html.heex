@@ -26,6 +26,12 @@
             >
               View Fulfilled Rewards
             </.link>
+            <.link
+              navigate={~p"/children/#{@child}/completed_tasks"}
+              class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+            >
+              View Completed Tasks
+            </.link>
           </div>
         <% end %>
       </div>
@@ -334,21 +340,19 @@
             <% end %>
           </div>
         <% "other" -> %>
-          <.table id="other-tasks" rows={Enum.filter(@tasks, &(&1.task_type == "one_off"))}>
+          <.table
+            id="other-tasks"
+            rows={
+              Enum.filter(@tasks, fn task ->
+                task.task_type == "one_off" && !Tasks.is_task_completed?(task, @child)
+              end)
+            }
+          >
             <:col :let={task} label="Title">{task.title}</:col>
             <:col :let={task} label="Description">{task.description}</:col>
             <:col :let={task} label="Points">{task.points} pts</:col>
             <:col :let={task} label="Status">
-              <%= case task.task_type do %>
-                <% "weekly" -> %>
-                  <%= if today_name() in (task.schedule_days || []) do %>
-                    Available Today
-                  <% else %>
-                    Next available: {next_available_day(task.schedule_days)}
-                  <% end %>
-                <% "one_off" -> %>
-                  One time task
-              <% end %>
+              One time task
             </:col>
             <:action :let={task}>
               <%= if can_complete_task?(task, @child) do %>

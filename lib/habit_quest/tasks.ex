@@ -271,6 +271,54 @@ defmodule HabitQuest.Tasks do
 
   def one_off_task_completed?(_task, _child_id), do: false
 
+  @doc """
+  Returns whether a task is completed for a child.
+  For one-off tasks, this checks the one_off_task_completions table.
+  For weekly tasks, this is equivalent to task_completed_today?.
+  For punch cards, this checks if they've completed all required punches.
+  """
+  def is_task_completed?(%Task{} = task, child) do
+    case task.task_type do
+      "one_off" -> one_off_task_completed?(task, child.id)
+      "weekly" -> task_completed_today?(task, child.id)
+      "punch_card" -> task.current_completions >= task.completions_required
+    end
+  end
+
+  def list_completed_tasks(child) do
+    one_off_tasks =
+      from(t in Task,
+        join: oc in OneOffTaskCompletion,
+        on: t.id == oc.task_id,
+        where: oc.child_id == ^child.id,
+        select_merge: %{completed_at: oc.completed_at},
+        order_by: [desc: oc.completed_at]
+      )
+
+    weekly_tasks =
+      from(t in Task,
+        join: tc in TaskCompletion,
+        on: t.id == tc.task_id,
+        where: tc.child_id == ^child.id,
+        select_merge: %{completed_at: tc.completed_at},
+        order_by: [desc: tc.completed_at]
+      )
+
+    punch_card_tasks =
+      from(t in Task,
+        join: pc in PunchCardCompletion,
+        on: t.id == pc.task_id,
+        where: pc.child_id == ^child.id,
+        select_merge: %{completed_at: pc.completed_at},
+        order_by: [desc: pc.completed_at]
+      )
+
+    Repo.all(one_off_tasks)
+    |> Kernel.++(Repo.all(weekly_tasks))
+    |> Kernel.++(Repo.all(punch_card_tasks))
+    |> Enum.sort_by(& &1.completed_at, {:desc, DateTime})
+  end
+
   defp put_children(changeset, nil), do: changeset
 
   defp put_children(changeset, child_ids) when is_list(child_ids) do

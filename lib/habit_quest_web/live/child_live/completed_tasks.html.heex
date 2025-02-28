@@ -1,0 +1,37 @@
+<div class="w-full px-4">
+  <.header>
+    <div class="flex items-center gap-4">
+      <%= if @child.avatar do %>
+        <img src={@child.avatar} alt={@child.name} class="w-16 h-16 rounded-full object-cover" />
+      <% else %>
+        <div class="w-16 h-16 rounded-full bg-zinc-200 flex items-center justify-center">
+          <span class="text-zinc-500 text-2xl font-medium">{String.first(@child.name)}</span>
+        </div>
+      <% end %>
+      {@child.name}'s Completed Tasks
+    </div>
+    <:actions>
+      <.link navigate={~p"/children/#{@child}"} class="button">
+        Back to Dashboard
+      </.link>
+    </:actions>
+  </.header>
+
+  <div class="mt-8">
+    <.table id="completed-tasks" rows={@completed_tasks}>
+      <:col :let={task} label="Title">{task.title}</:col>
+      <:col :let={task} label="Description">{task.description}</:col>
+      <:col :let={task} label="Points">{task.points} pts</:col>
+      <:col :let={task} label="Completion Date">
+        {Calendar.strftime(task.completed_at, "%B %d, %Y")}
+      </:col>
+      <:col :let={task} label="Type">
+        {case task.task_type do
+          "one_off" -> "One-time Task"
+          "weekly" -> "Daily Task"
+          "punch_card" -> "Punch Card"
+        end}
+      </:col>
+    </.table>
+  </div>
+</div>
