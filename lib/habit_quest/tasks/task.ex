@@ -11,7 +11,6 @@ defmodule HabitQuest.Tasks.Task do
     field :current_completions, :integer, default: 0
     field :schedule_days, {:array, :string}
     field :child_ids, {:array, :integer}, virtual: true
-    field :completed, :boolean, default: false
 
     many_to_many :children, HabitQuest.Children.Child,
       join_through: HabitQuest.Tasks.ChildTask,
@@ -49,8 +48,7 @@ defmodule HabitQuest.Tasks.Task do
       :completions_required,
       :current_completions,
       :schedule_days,
-      :child_ids,
-      :completed
+      :child_ids
     ])
     |> validate_required([:title, :description, :points, :task_type])
     |> validate_inclusion(:task_type, @task_types)
@@ -70,13 +68,16 @@ defmodule HabitQuest.Tasks.Task do
         |> validate_required([:schedule_days])
         |> validate_schedule_days()
 
-      _ -> changeset
+      _ ->
+        changeset
     end
   end
 
   defp validate_schedule_days(changeset) do
     case get_field(changeset, :schedule_days) do
-      nil -> changeset
+      nil ->
+        changeset
+
       days ->
         if Enum.all?(days, &(&1 in @days_of_week)) do
           changeset

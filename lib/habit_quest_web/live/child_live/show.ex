@@ -125,6 +125,18 @@ defmodule HabitQuestWeb.ChildLive.Show do
          |> push_event("task-completed", %{})
          |> put_flash(:info, "Task completed successfully!")}
 
+      {:ok, %{one_off_completion: _completion}} ->
+        # One-off task completed successfully
+        Children.award_points(child, task.points)
+        updated_child = Children.get_child!(child.id)
+
+        {:noreply,
+         socket
+         |> assign(:tasks, Tasks.list_tasks_for_child(updated_child))
+         |> assign(:child, updated_child)
+         |> push_event("task-completed", %{})
+         |> put_flash(:info, "Task completed successfully!")}
+
       {:ok, %{task: updated_task}} ->
         # Punch card task updated successfully
         # Check if this completion just completed the punch card
@@ -291,7 +303,7 @@ defmodule HabitQuestWeb.ChildLive.Show do
           task.current_completions < task.completions_required
 
         "one_off" ->
-          !task.completed
+          !Tasks.one_off_task_completed?(task, child.id)
       end
     end
   end

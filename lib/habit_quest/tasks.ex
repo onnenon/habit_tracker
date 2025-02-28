@@ -6,7 +6,7 @@ defmodule HabitQuest.Tasks do
   import Ecto.Query, warn: false
   alias HabitQuest.Repo
 
-  alias HabitQuest.Tasks.{Task, TaskCompletion, PunchCardCompletion}
+  alias HabitQuest.Tasks.{Task, TaskCompletion, PunchCardCompletion, OneOffTaskCompletion}
   alias HabitQuest.Children.Child
 
   @doc """
@@ -65,9 +65,15 @@ defmodule HabitQuest.Tasks do
   def complete_task(%Task{} = task, %Child{} = child, completion_date \\ nil) do
     case task.task_type do
       "one_off" ->
-        # For one-off tasks, just mark them as completed
+        # For one-off tasks, just create a completion record
+        completed_at = (completion_date || DateTime.utc_now()) |> DateTime.truncate(:second)
+
         Ecto.Multi.new()
-        |> Ecto.Multi.update(:task, Task.changeset(task, %{completed: true}))
+        |> Ecto.Multi.insert(:one_off_completion, %OneOffTaskCompletion{
+          task_id: task.id,
+          child_id: child.id,
+          completed_at: completed_at
+        })
         |> Repo.transaction()
 
       "weekly" ->
@@ -84,17 +90,25 @@ defmodule HabitQuest.Tasks do
     end
   end
 
-  defp maybe_create_task_completion(multi, %Task{task_type: "weekly"} = task, child, completion_date) do
-    completed_at = if completion_date do
-      completion_date
-      |> DateTime.new!(~T[12:00:00], "Etc/UTC")
-    else
-      DateTime.utc_now()
-    end
+  defp maybe_create_task_completion(
+         multi,
+         %Task{task_type: "weekly"} = task,
+         child,
+         completion_date
+       ) do
+    completed_at =
+      if completion_date do
+        completion_date
+        |> DateTime.new!(~T[12:00:00], "Etc/UTC")
+      else
+        DateTime.utc_now()
+      end
+      |> DateTime.truncate(:second)
 
     case Repo.exists?(TaskCompletion.completed_on_date?(task.id, child.id, completed_at)) do
       true ->
         multi
+
       false ->
         multi
         |> Ecto.Multi.insert(:task_completion, %TaskCompletion{
@@ -106,7 +120,14 @@ defmodule HabitQuest.Tasks do
   end
 
   # For punch cards, we don't create completion records until fully completed
-  defp maybe_create_task_completion(multi, %Task{task_type: "punch_card"}, _child, _completion_date), do: multi
+  defp maybe_create_task_completion(
+         multi,
+         %Task{task_type: "punch_card"},
+         _child,
+         _completion_date
+       ),
+       do: multi
+
   defp maybe_create_task_completion(multi, _task, _child, _completion_date), do: multi
 
   defp maybe_update_punch_card(multi, %Task{task_type: "punch_card"} = task, child) do
@@ -115,11 +136,13 @@ defmodule HabitQuest.Tasks do
 
     if new_completions >= task.completions_required do
       # When they complete the punch card, reset counter and create a completion record
+      completed_at = DateTime.utc_now() |> DateTime.truncate(:second)
+
       multi
       |> Ecto.Multi.insert(:punch_card_completion, %PunchCardCompletion{
         task_id: task.id,
         child_id: child.id,
-        completed_at: DateTime.utc_now() |> DateTime.truncate(:second)
+        completed_at: completed_at
       })
       |> Ecto.Multi.update(:task, Task.changeset(task, %{current_completions: 0}))
     else
@@ -128,18 +151,21 @@ defmodule HabitQuest.Tasks do
       |> Ecto.Multi.update(:task, Task.changeset(task, %{current_completions: new_completions}))
     end
   end
+
   defp maybe_update_punch_card(multi, _task, _child), do: multi
 
   def task_completed_today?(%Task{task_type: "weekly"} = task, child_id) do
     Repo.exists?(TaskCompletion.completed_today?(task.id, child_id))
   end
+
   def task_completed_today?(_task, _child_id), do: false
 
   def list_task_completions_in_range(child_id, start_date, end_date) do
     from(tc in TaskCompletion,
-      where: tc.child_id == ^child_id and
-             fragment("date(?)", tc.completed_at) >= ^start_date and
-             fragment("date(?)", tc.completed_at) <= ^end_date,
+      where:
+        tc.child_id == ^child_id and
+          fragment("date(?)", tc.completed_at) >= ^start_date and
+          fragment("date(?)", tc.completed_at) <= ^end_date,
       select: {tc.task_id, fragment("date(?)", tc.completed_at)}
     )
     |> Repo.all()
@@ -149,9 +175,10 @@ defmodule HabitQuest.Tasks do
   def task_completed_on_date?(task, child_id, date) do
     Repo.exists?(
       from tc in TaskCompletion,
-        where: tc.task_id == ^task.id and
-               tc.child_id == ^child_id and
-               fragment("date(?)", tc.completed_at) == ^date
+        where:
+          tc.task_id == ^task.id and
+            tc.child_id == ^child_id and
+            fragment("date(?)", tc.completed_at) == ^date
     )
   end
 
@@ -181,6 +208,7 @@ defmodule HabitQuest.Tasks do
   def change_task(%Task{} = task, attrs \\ %{}) do
     # Make sure we always have children loaded for proper form handling
     task = if Ecto.assoc_loaded?(task.children), do: task, else: Repo.preload(task, :children)
+
     task
     |> Task.changeset(attrs)
   end
@@ -208,6 +236,9 @@ defmodule HabitQuest.Tasks do
           true -> :not_started
         end
 
+      "one_off" ->
+        if one_off_task_completed?(task, child_id), do: :completed, else: :not_started
+
       _ ->
         :not_started
     end
@@ -218,35 +249,55 @@ defmodule HabitQuest.Tasks do
   """
   def count_punch_card_completions(task_id, child_id) do
     from(pc in PunchCardCompletion,
-      where: pc.task_id == ^task_id and
-             pc.child_id == ^child_id,
+      where:
+        pc.task_id == ^task_id and
+          pc.child_id == ^child_id,
       select: count(pc.id)
     )
     |> Repo.one()
   end
 
+  @doc """
+  Returns whether a one-off task has been completed by a child
+  """
+  def one_off_task_completed?(%Task{task_type: "one_off"} = task, child_id) do
+    Repo.exists?(
+      from oc in OneOffTaskCompletion,
+        where:
+          oc.task_id == ^task.id and
+            oc.child_id == ^child_id
+    )
+  end
+
+  def one_off_task_completed?(_task, _child_id), do: false
+
   defp put_children(changeset, nil), do: changeset
+
   defp put_children(changeset, child_ids) when is_list(child_ids) do
     # Ensure we're working with valid integer IDs
-    valid_ids = child_ids
-    |> Enum.filter(&(&1 != nil))
-    |> Enum.map(&to_integer/1)
-    |> Enum.filter(&(&1 != nil))
+    valid_ids =
+      child_ids
+      |> Enum.filter(&(&1 != nil))
+      |> Enum.map(&to_integer/1)
+      |> Enum.filter(&(&1 != nil))
 
-    children = case valid_ids do
-      [] -> []
-      ids -> Repo.all(from c in Child, where: c.id in ^ids)
-    end
+    children =
+      case valid_ids do
+        [] -> []
+        ids -> Repo.all(from c in Child, where: c.id in ^ids)
+      end
 
     Ecto.Changeset.put_assoc(changeset, :children, children)
   end
 
   defp to_integer(val) when is_integer(val), do: val
+
   defp to_integer(val) when is_binary(val) do
     case Integer.parse(val) do
       {int, ""} -> int
       _ -> nil
     end
   end
+
   defp to_integer(_), do: nil
 end
