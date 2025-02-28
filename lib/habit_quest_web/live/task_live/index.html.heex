@@ -10,13 +10,13 @@
 <.table
   id="tasks"
   rows={@streams.tasks}
-  row_click={fn {id, _task} -> JS.navigate(~p"/tasks/#{id}/edit") end}
+  row_click={fn {_id, task} -> JS.navigate(~p"/tasks/#{task}/edit") end}
 >
-  <:col :let={{_id, task}} label="Title"><%= task.title %></:col>
-  <:col :let={{_id, task}} label="Description"><%= task.description %></:col>
-  <:col :let={{_id, task}} label="Points"><%= task.points %></:col>
+  <:col :let={{_id, task}} label="Title">{task.title}</:col>
+  <:col :let={{_id, task}} label="Description">{task.description}</:col>
+  <:col :let={{_id, task}} label="Points">{task.points}</:col>
   <:col :let={{_id, task}} label="Type">
-    <%= String.replace(task.task_type, "_", " ") |> String.capitalize() %>
+    {String.replace(task.task_type, "_", " ") |> String.capitalize()}
   </:col>
   <:action :let={{_id, task}}>
     <div class="sr-only">
