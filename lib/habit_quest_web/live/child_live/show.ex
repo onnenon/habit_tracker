@@ -25,7 +25,8 @@ defmodule HabitQuestWeb.ChildLive.Show do
      |> assign(:task_completions, task_completions)
      |> assign(:current_week, %{start: week_start, end: week_end})
      |> assign(:current_tab, "daily")
-     |> assign(:unfulfilled_rewards, [])}  # Add this line
+     |> assign(:show_menu, false)
+     |> assign(:unfulfilled_rewards, [])}
   end
 
   @impl true
@@ -36,8 +37,10 @@ defmodule HabitQuestWeb.ChildLive.Show do
     week_end = socket.assigns.current_week.end
     task_completions = Tasks.list_task_completions_in_range(child.id, week_start, week_end)
     rewards = Rewards.list_rewards_for_child(child)
-    unfulfilled_rewards = Rewards.list_redeemed_rewards(false)
-      |> Enum.filter(& &1.child_id == child.id)
+
+    unfulfilled_rewards =
+      Rewards.list_redeemed_rewards(false)
+      |> Enum.filter(&(&1.child_id == child.id))
 
     {:noreply,
      socket
@@ -125,7 +128,9 @@ defmodule HabitQuestWeb.ChildLive.Show do
       {:ok, %{task: updated_task}} ->
         # Punch card task updated successfully
         # Check if this completion just completed the punch card
-        was_just_completed = updated_task.current_completions == 0 && task.current_completions + 1 >= task.completions_required
+        was_just_completed =
+          updated_task.current_completions == 0 &&
+            task.current_completions + 1 >= task.completions_required
 
         if was_just_completed do
           Children.award_points(child, task.points)
@@ -133,7 +138,8 @@ defmodule HabitQuestWeb.ChildLive.Show do
 
         updated_child = Children.get_child!(child.id)
 
-        socket = socket
+        socket =
+          socket
           |> assign(:child, updated_child)
           |> assign(:tasks, Tasks.list_tasks_for_child(updated_child))
 
@@ -195,24 +201,30 @@ defmodule HabitQuestWeb.ChildLive.Show do
       updated_child = Children.get_child!(child.id)
 
       # Create redeemed reward entry
-      {:ok, _redeemed_reward} = Rewards.create_redeemed_reward(%{
-        child_id: child.id,
-        reward_id: reward.id,
-        redeemed_at: DateTime.utc_now(),
-        fulfilled: false
-      })
+      {:ok, _redeemed_reward} =
+        Rewards.create_redeemed_reward(%{
+          child_id: child.id,
+          reward_id: reward.id,
+          redeemed_at: DateTime.utc_now(),
+          fulfilled: false
+        })
 
       # Refresh rewards list and unfulfilled rewards to update UI state
       rewards = Rewards.list_rewards_for_child(updated_child)
-      unfulfilled_rewards = Rewards.list_redeemed_rewards(false)
-        |> Enum.filter(& &1.child_id == child.id)
+
+      unfulfilled_rewards =
+        Rewards.list_redeemed_rewards(false)
+        |> Enum.filter(&(&1.child_id == child.id))
 
       {:noreply,
        socket
        |> assign(:child, updated_child)
        |> assign(:rewards, rewards)
        |> assign(:unfulfilled_rewards, unfulfilled_rewards)
-       |> put_flash(:info, "Reward redeemed successfully! Show this to your parent to claim your reward.")}
+       |> put_flash(
+         :info,
+         "Reward redeemed successfully! Show this to your parent to claim your reward."
+       )}
     else
       {:noreply,
        socket
@@ -228,8 +240,10 @@ defmodule HabitQuestWeb.ChildLive.Show do
       {:ok, _} ->
         # Refresh the child and unfulfilled rewards
         child = Children.get_child!(socket.assigns.child.id)
-        unfulfilled_rewards = Rewards.list_redeemed_rewards(false)
-          |> Enum.filter(& &1.child_id == child.id)
+
+        unfulfilled_rewards =
+          Rewards.list_redeemed_rewards(false)
+          |> Enum.filter(&(&1.child_id == child.id))
 
         {:noreply,
          socket
@@ -249,6 +263,16 @@ defmodule HabitQuestWeb.ChildLive.Show do
     {:noreply, assign(socket, :current_tab, tab)}
   end
 
+  @impl true
+  def handle_event("toggle_menu", _params, socket) do
+    {:noreply, assign(socket, :show_menu, !socket.assigns.show_menu)}
+  end
+
+  @impl true
+  def handle_event("close_menu", _params, socket) do
+    {:noreply, assign(socket, :show_menu, false)}
+  end
+
   def can_complete_task?(task, child, date \\ nil) do
     date = date || Date.utc_today()
 
@@ -259,10 +283,13 @@ defmodule HabitQuestWeb.ChildLive.Show do
       case task.task_type do
         "weekly" ->
           day_name = date |> Date.day_of_week() |> day_number_to_name()
+
           !Tasks.task_completed_on_date?(task, child.id, date) &&
-          day_name in (task.schedule_days || [])
+            day_name in (task.schedule_days || [])
+
         "punch_card" ->
           task.current_completions < task.completions_required
+
         "one_off" ->
           !task.completed
       end
@@ -277,14 +304,16 @@ defmodule HabitQuestWeb.ChildLive.Show do
 
   def next_available_day(nil), do: "No schedule set"
   def next_available_day([]), do: "No schedule set"
+
   def next_available_day(schedule_days) do
     today_num = Date.utc_today() |> Date.day_of_week()
 
     schedule_numbers = Enum.map(schedule_days, &day_name_to_number/1)
 
-    next_day = Enum.find(schedule_numbers, fn day ->
-      day > today_num
-    end) || List.first(schedule_numbers)
+    next_day =
+      Enum.find(schedule_numbers, fn day ->
+        day > today_num
+      end) || List.first(schedule_numbers)
 
     day_number_to_name(next_day)
   end

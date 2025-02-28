@@ -1,18 +1,42 @@
 <div class="w-full px-4">
   <.header>
-    <div class="flex items-center gap-4">
-      <%= if @child.avatar do %>
-        <img src={@child.avatar} alt={@child.name} class="w-16 h-16 rounded-full object-cover"/>
-      <% else %>
-        <div class="w-16 h-16 rounded-full bg-zinc-200 flex items-center justify-center">
-          <span class="text-zinc-500 text-2xl font-medium"><%= String.first(@child.name) %></span>
-        </div>
-      <% end %>
-      <%= @child.name %>'s Dashboard
+    <div class="flex items-center justify-between w-full">
+      <div class="flex items-center gap-4">
+        <%= if @child.avatar do %>
+          <img src={@child.avatar} alt={@child.name} class="w-16 h-16 rounded-full object-cover" />
+        <% else %>
+          <div class="w-16 h-16 rounded-full bg-zinc-200 flex items-center justify-center">
+            <span class="text-zinc-500 text-2xl font-medium">{String.first(@child.name)}</span>
+          </div>
+        <% end %>
+        {@child.name}'s Dashboard
+      </div>
+      <div class="relative" phx-click-away="close_menu">
+        <button
+          phx-click="toggle_menu"
+          class="inline-flex items-center p-2 text-gray-500 rounded-lg hover:bg-gray-100 focus:outline-none"
+        >
+          <.icon name="hero-ellipsis-horizontal" class="w-5 h-5" />
+        </button>
+        <%= if @show_menu do %>
+          <div class="absolute right-0 z-10 mt-2 w-48 origin-top-right rounded-md bg-white py-1 shadow-lg ring-1 ring-black ring-opacity-5">
+            <.link
+              navigate={~p"/children/#{@child}/redeemed_rewards"}
+              class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+            >
+              View Fulfilled Rewards
+            </.link>
+          </div>
+        <% end %>
+      </div>
     </div>
     <:subtitle>
-      <span class="text-3xl font-bold transition-all duration-300 transform" id="points" phx-hook="Points">
-        Current Points: <%= @child.points %>
+      <span
+        class="text-3xl font-bold transition-all duration-300 transform"
+        id="points"
+        phx-hook="Points"
+      >
+        Current Points: {@child.points}
       </span>
     </:subtitle>
   </.header>
@@ -25,7 +49,10 @@
           phx-value-tab="daily"
           class={[
             "py-4 px-1 border-b-2 font-medium text-sm whitespace-nowrap",
-            if(@current_tab == "daily", do: "border-indigo-500 text-indigo-600", else: "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300")
+            if(@current_tab == "daily",
+              do: "border-indigo-500 text-indigo-600",
+              else: "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+            )
           ]}
         >
           Daily Tasks
@@ -35,7 +62,10 @@
           phx-value-tab="punch_cards"
           class={[
             "py-4 px-1 border-b-2 font-medium text-sm whitespace-nowrap",
-            if(@current_tab == "punch_cards", do: "border-indigo-500 text-indigo-600", else: "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300")
+            if(@current_tab == "punch_cards",
+              do: "border-indigo-500 text-indigo-600",
+              else: "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+            )
           ]}
         >
           Punch Cards
@@ -45,7 +75,10 @@
           phx-value-tab="other"
           class={[
             "py-4 px-1 border-b-2 font-medium text-sm whitespace-nowrap",
-            if(@current_tab == "other", do: "border-indigo-500 text-indigo-600", else: "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300")
+            if(@current_tab == "other",
+              do: "border-indigo-500 text-indigo-600",
+              else: "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+            )
           ]}
         >
           Other Tasks
@@ -56,7 +89,10 @@
           phx-value-tab="rewards"
           class={[
             "py-4 px-1 border-b-2 font-medium text-sm whitespace-nowrap",
-            if(@current_tab == "rewards", do: "border-indigo-500 text-indigo-600", else: "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300")
+            if(@current_tab == "rewards",
+              do: "border-indigo-500 text-indigo-600",
+              else: "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+            )
           ]}
         >
           Rewards
@@ -105,42 +141,54 @@
                     task.task_type == "weekly" && 
                     full_day in (task.schedule_days || [])
                   end) |> Enum.sort_by(&{-&1.points, &1.title}) do %>
-                    <% 
-                      task_completed = if Map.has_key?(@task_completions, task.id) do
+                    <% task_completed =
+                      if Map.has_key?(@task_completions, task.id) do
                         completions = @task_completions[task.id]
                         date_str = if is_binary(date), do: date, else: Date.to_string(date)
-                        Enum.any?(completions, fn completion_date -> 
-                          comp_str = if is_binary(completion_date), do: completion_date, else: Date.to_string(completion_date)
+
+                        Enum.any?(completions, fn completion_date ->
+                          comp_str =
+                            if is_binary(completion_date),
+                              do: completion_date,
+                              else: Date.to_string(completion_date)
+
                           comp_str == date_str
                         end)
                       else
                         false
                       end
 
-                      is_future = Date.compare(date, Date.utc_today()) == :gt
-                    %>
-                    <div class={[
-                      cond do
-                        task_completed -> "bg-green-50 rounded-lg p-3 border border-green-100 transition-colors"
-                        is_future -> "bg-gray-50/50 rounded-lg p-3 border border-gray-100 transition-colors opacity-95"
-                        true -> "bg-gray-50 rounded-lg p-3 border border-gray-200 transition-colors"
-                      end,
-                      # Make clickable if either it can be completed OR if it's already completed (for toggling)
-                      if can_complete_task?(task, @child, date) or task_completed do
-                        "cursor-pointer hover:border-gray-300"
-                      else
-                        ""
-                      end
-                    ]}
-                    phx-click={
-                      cond do
-                        task_completed -> "remove_task_completion"
-                        can_complete_task?(task, @child, date) -> "complete_task"
-                        true -> nil
-                      end
-                    }
-                    phx-value-id={task.id}
-                    phx-value-date={if is_binary(date), do: date, else: Date.to_string(date)}
+                    is_future = Date.compare(date, Date.utc_today()) == :gt %>
+                    <div
+                      class={
+                        [
+                          cond do
+                            task_completed ->
+                              "bg-green-50 rounded-lg p-3 border border-green-100 transition-colors"
+
+                            is_future ->
+                              "bg-gray-50/50 rounded-lg p-3 border border-gray-100 transition-colors opacity-95"
+
+                            true ->
+                              "bg-gray-50 rounded-lg p-3 border border-gray-200 transition-colors"
+                          end,
+                          # Make clickable if either it can be completed OR if it's already completed (for toggling)
+                          if can_complete_task?(task, @child, date) or task_completed do
+                            "cursor-pointer hover:border-gray-300"
+                          else
+                            ""
+                          end
+                        ]
+                      }
+                      phx-click={
+                        cond do
+                          task_completed -> "remove_task_completion"
+                          can_complete_task?(task, @child, date) -> "complete_task"
+                          true -> nil
+                        end
+                      }
+                      phx-value-id={task.id}
+                      phx-value-date={if is_binary(date), do: date, else: Date.to_string(date)}
                     >
                       <div class="flex justify-between items-start gap-2">
                         <div>
@@ -203,29 +251,41 @@
               </div>
             <% end %>
           </div>
-
         <% "punch_cards" -> %>
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <%= for task <- Enum.filter(@tasks, & &1.task_type == "punch_card") do %>
-              <div 
+              <div
                 class={[
                   "bg-white shadow rounded-lg p-4",
-                  (if task.current_completions >= task.completions_required, do: "bg-green-50 border border-green-100", else: "")
-                ]} 
-                id={"punch-card-#{task.id}"} 
+                  if(task.current_completions >= task.completions_required,
+                    do: "bg-green-50 border border-green-100",
+                    else: ""
+                  )
+                ]}
+                id={"punch-card-#{task.id}"}
                 data-completions-required={task.completions_required}
               >
                 <div class="flex justify-between items-start mb-2">
                   <h3 class={[
                     "text-lg font-medium",
-                    (if task.current_completions >= task.completions_required, do: "text-green-900", else: "")
-                  ]}><%= task.title %></h3>
+                    if(task.current_completions >= task.completions_required,
+                      do: "text-green-900",
+                      else: ""
+                    )
+                  ]}>
+                    {task.title}
+                  </h3>
                   <span class={[
                     "text-sm font-medium",
-                    (if task.current_completions >= task.completions_required, do: "text-green-600", else: "text-orange-600")
-                  ]}><%= task.points %> pts</span>
+                    if(task.current_completions >= task.completions_required,
+                      do: "text-green-600",
+                      else: "text-orange-600"
+                    )
+                  ]}>
+                    {task.points} pts
+                  </span>
                 </div>
-                <p class="text-sm text-gray-600 mb-2"><%= task.description %></p>
+                <p class="text-sm text-gray-600 mb-2">{task.description}</p>
                 <div class="flex items-center justify-between mb-4">
                   <div class="flex gap-2">
                     <%= for i <- 1..task.completions_required do %>
@@ -259,9 +319,9 @@
                   <div class="text-sm text-gray-500">
                     <% completion_count = Tasks.count_punch_card_completions(task.id, @child.id) %>
                     <%= if completion_count > 0 do %>
-                      Completed <%= completion_count %> times!
+                      Completed {completion_count} times!
                     <% else %>
-                      Completed <%= completion_count %> times total
+                      Completed {completion_count} times total
                     <% end %>
                   </div>
                 </div>
@@ -273,7 +333,6 @@
               </div>
             <% end %>
           </div>
-
         <% "other" -> %>
           <.table id="other-tasks" rows={Enum.filter(@tasks, &(&1.task_type == "one_off"))}>
             <:col :let={task} label="Title">{task.title}</:col>
@@ -299,7 +358,6 @@
               <% end %>
             </:action>
           </.table>
-
         <% "rewards" -> %>
           <div class="space-y-8">
             <%= if length(@unfulfilled_rewards) > 0 do %>
@@ -309,24 +367,45 @@
                   <%= for redeemed_reward <- @unfulfilled_rewards do %>
                     <div class="bg-white shadow rounded-lg overflow-hidden border border-yellow-100">
                       <%= if redeemed_reward.reward.image do %>
-                        <img src={redeemed_reward.reward.image} alt={redeemed_reward.reward.name} class="w-full h-48 object-cover"/>
+                        <img
+                          src={redeemed_reward.reward.image}
+                          alt={redeemed_reward.reward.name}
+                          class="w-full h-48 object-cover"
+                        />
                       <% else %>
                         <div class="w-full h-48 bg-zinc-200 flex items-center justify-center">
-                          <svg xmlns="http://www.w3.org/2000/svg" class="w-16 h-16 text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            class="w-16 h-16 text-zinc-400"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                              stroke-width="2"
+                              d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
+                            />
                           </svg>
                         </div>
                       <% end %>
                       <div class="p-4">
                         <div class="flex items-center justify-between mb-2">
-                          <h3 class="text-lg font-medium text-gray-900"><%= redeemed_reward.reward.name %></h3>
+                          <h3 class="text-lg font-medium text-gray-900">
+                            {redeemed_reward.reward.name}
+                          </h3>
                           <span class="px-2 py-1 text-xs font-medium rounded-full bg-yellow-100 text-yellow-800">
                             Pending
                           </span>
                         </div>
-                        <p class="mt-1 text-sm text-gray-500"><%= redeemed_reward.reward.description %></p>
+                        <p class="mt-1 text-sm text-gray-500">
+                          {redeemed_reward.reward.description}
+                        </p>
                         <div class="mt-4 flex items-center justify-between">
-                          <span class="text-indigo-600 font-medium"><%= redeemed_reward.reward.points %> points</span>
+                          <span class="text-indigo-600 font-medium">
+                            {redeemed_reward.reward.points} points
+                          </span>
                           <.button
                             phx-click="cancel_reward"
                             phx-value-id={redeemed_reward.id}
@@ -348,24 +427,37 @@
                 <%= for reward <- @rewards do %>
                   <div class="bg-white shadow rounded-lg overflow-hidden">
                     <%= if reward.image do %>
-                      <img src={reward.image} alt={reward.name} class="w-full h-48 object-cover"/>
+                      <img src={reward.image} alt={reward.name} class="w-full h-48 object-cover" />
                     <% else %>
                       <div class="w-full h-48 bg-zinc-200 flex items-center justify-center">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="w-16 h-16 text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          class="w-16 h-16 text-zinc-400"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
+                          />
                         </svg>
                       </div>
                     <% end %>
                     <div class="p-4">
-                      <h3 class="text-lg font-medium text-gray-900"><%= reward.name %></h3>
-                      <p class="mt-1 text-sm text-gray-500"><%= reward.description %></p>
+                      <h3 class="text-lg font-medium text-gray-900">{reward.name}</h3>
+                      <p class="mt-1 text-sm text-gray-500">{reward.description}</p>
                       <div class="mt-4 flex items-center justify-between">
-                        <span class="text-indigo-600 font-medium"><%= reward.points %> points</span>
+                        <span class="text-indigo-600 font-medium">{reward.points} points</span>
                         <.button
                           phx-click="redeem_reward"
                           phx-value-id={reward.id}
                           disabled={@child.points < reward.points}
-                          class={if @child.points < reward.points, do: "opacity-50 cursor-not-allowed"}
+                          class={
+                            if @child.points < reward.points, do: "opacity-50 cursor-not-allowed"
+                          }
                         >
                           Redeem
                         </.button>

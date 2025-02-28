@@ -35,6 +35,7 @@ defmodule HabitQuestWeb.Router do
     live "/children/new", ChildLive.Index, :new
     live "/children/:id/edit", ChildLive.Index, :edit
     live "/children/:id", ChildLive.Show, :show
+    live "/children/:id/redeemed_rewards", RedeemedRewardLive.Index, :show
 
     # Reward management routes
     live "/rewards", RewardLive.Index, :index

@@ -1,19 +1,31 @@
 <.header>
-  Redeemed Rewards
-  <:actions>
+  <%= if @child do %>
     <div class="flex items-center gap-4">
-      <label class="relative inline-flex items-center gap-3 cursor-pointer">
-        <input
-          type="checkbox"
-          checked={@show_fulfilled}
-          phx-click="toggle_fulfilled"
-          class="sr-only peer"
-        />
-        <div class="w-11 h-6 bg-zinc-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-zinc-300 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-zinc-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-zinc-600">
-        </div>
-        <span class="text-sm text-zinc-600">Show fulfilled rewards</span>
-      </label>
+      <.link navigate={~p"/children/#{@child}"} class="text-sm text-zinc-600 hover:text-zinc-900">
+        ← Back to Dashboard
+      </.link>
+      <span class="text-zinc-300">|</span>
+      {gettext("%{name}'s Fulfilled Rewards", name: @child.name)}
     </div>
+  <% else %>
+    Redeemed Rewards
+  <% end %>
+  <:actions>
+    <%= unless @child do %>
+      <div class="flex items-center gap-4">
+        <label class="relative inline-flex items-center gap-3 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={@show_fulfilled}
+            phx-click="toggle_fulfilled"
+            class="sr-only peer"
+          />
+          <div class="w-11 h-6 bg-zinc-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-zinc-300 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-zinc-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-zinc-600">
+          </div>
+          <span class="text-sm text-zinc-600">Show fulfilled rewards</span>
+        </label>
+      </div>
+    <% end %>
   </:actions>
 </.header>
 
@@ -21,14 +33,14 @@
   <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
     <%= for redeemed_reward <- @redeemed_rewards do %>
       <div class={[
-        "shadow rounded-lg overflow-hidden transition-colors",
-        if(redeemed_reward.fulfilled && @show_fulfilled, do: "bg-zinc-100", else: "bg-white")
+        "shadow rounded-lg overflow-hidden",
+        if(redeemed_reward.fulfilled, do: "bg-zinc-100", else: "bg-white")
       ]}>
         <%= if redeemed_reward.reward.image do %>
           <div class={[
             "relative",
-            if(redeemed_reward.fulfilled && @show_fulfilled,
-              do: "after:absolute after:inset-0 after:bg-black/10"
+            if(redeemed_reward.fulfilled,
+              do: "after:absolute after:inset-0 after:bg-black/20"
             )
           ]}>
             <img
@@ -38,10 +50,16 @@
             />
           </div>
         <% else %>
-          <div class="w-full h-48 bg-zinc-200 flex items-center justify-center">
+          <div class={[
+            "w-full h-48 flex items-center justify-center",
+            if(redeemed_reward.fulfilled, do: "bg-zinc-200", else: "bg-zinc-100")
+          ]}>
             <svg
               xmlns="http://www.w3.org/2000/svg"
-              class="w-16 h-16 text-zinc-400"
+              class={[
+                "w-16 h-16",
+                if(redeemed_reward.fulfilled, do: "text-zinc-500", else: "text-zinc-400")
+              ]}
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
@@ -70,10 +88,12 @@
           </div>
           <p class="text-sm text-gray-500 mb-2">{redeemed_reward.reward.description}</p>
           <div class="mt-4 space-y-2">
-            <div class="flex items-center justify-between text-sm">
-              <span class="text-gray-600">Redeemed by:</span>
-              <span class="font-medium">{redeemed_reward.child.name}</span>
-            </div>
+            <%= unless @child do %>
+              <div class="flex items-center justify-between text-sm">
+                <span class="text-gray-600">Redeemed by:</span>
+                <span class="font-medium">{redeemed_reward.child.name}</span>
+              </div>
+            <% end %>
             <div class="flex items-center justify-between text-sm">
               <span class="text-gray-600">Redeemed at:</span>
               <span class="font-medium">
@@ -103,12 +123,25 @@
 
   <%= if Enum.empty?(@redeemed_rewards) do %>
     <div class="text-center py-12">
-      <h3 class="text-lg font-medium text-gray-900">No redeemed rewards found</h3>
-      <p class="mt-2 text-sm text-gray-500">
-        <%= if @show_fulfilled do %>
-          There are no redeemed rewards to display.
+      <h3 class="text-lg font-medium text-gray-900">
+        <%= if @child do %>
+          No fulfilled rewards found
         <% else %>
-          There are no pending rewards to fulfill.
+          <%= if @show_fulfilled do %>
+            No fulfilled rewards found
+          <% else %>
+            No pending rewards found
+          <% end %>
+        <% end %>
+      </h3>
+      <p class="mt-2 text-sm text-gray-500">
+        <%= cond do %>
+          <% @child -> %>
+            {gettext("%{name} hasn't had any rewards fulfilled yet.", name: @child.name)}
+          <% @show_fulfilled -> %>
+            There are no fulfilled rewards to display.
+          <% true -> %>
+            There are no pending rewards to fulfill.
         <% end %>
       </p>
     </div>
