@@ -43,59 +43,59 @@
 
   <div class="mt-8">
     <div class="border-b border-gray-200">
-      <nav class="-mb-px flex space-x-8" aria-label="Tabs">
+      <nav class="-mb-px flex space-x-4 px-4" aria-label="Tabs">
         <button
           phx-click="change_tab"
           phx-value-tab="daily"
           class={[
-            "py-4 px-1 border-b-2 font-medium text-sm whitespace-nowrap",
+            "flex items-center gap-2 py-3 px-6 rounded-t-lg font-medium text-sm transition-colors duration-200",
             if(@current_tab == "daily",
-              do: "border-zinc-500 text-zinc-600",
-              else: "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+              do: "bg-zinc-100 text-zinc-800 border-2 border-b-0 border-zinc-200",
+              else: "text-gray-600 hover:text-gray-800 hover:bg-zinc-50"
             )
           ]}
         >
-          Daily Tasks
+          <.icon name="hero-calendar-solid" class="w-5 h-5" /> Daily Tasks
         </button>
         <button
           phx-click="change_tab"
           phx-value-tab="punch_cards"
           class={[
-            "py-4 px-1 border-b-2 font-medium text-sm whitespace-nowrap",
+            "flex items-center gap-2 py-3 px-6 rounded-t-lg font-medium text-sm transition-colors duration-200",
             if(@current_tab == "punch_cards",
-              do: "border-zinc-500 text-zinc-600",
-              else: "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+              do: "bg-zinc-100 text-zinc-800 border-2 border-b-0 border-zinc-200",
+              else: "text-gray-600 hover:text-gray-800 hover:bg-zinc-50"
             )
           ]}
         >
-          Punch Cards
+          <.icon name="hero-ticket-solid" class="w-5 h-5" /> Punch Cards
         </button>
         <button
           phx-click="change_tab"
           phx-value-tab="other"
           class={[
-            "py-4 px-1 border-b-2 font-medium text-sm whitespace-nowrap",
+            "flex items-center gap-2 py-3 px-6 rounded-t-lg font-medium text-sm transition-colors duration-200",
             if(@current_tab == "other",
-              do: "border-zinc-500 text-zinc-600",
-              else: "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+              do: "bg-zinc-100 text-zinc-800 border-2 border-b-0 border-zinc-200",
+              else: "text-gray-600 hover:text-gray-800 hover:bg-zinc-50"
             )
           ]}
         >
-          Other Tasks
+          <.icon name="hero-list-bullet-solid" class="w-5 h-5" /> Other Tasks
         </button>
         <div class="flex-1"></div>
         <button
           phx-click="change_tab"
           phx-value-tab="rewards"
           class={[
-            "py-4 px-1 border-b-2 font-medium text-sm whitespace-nowrap",
+            "flex items-center gap-2 py-3 px-6 rounded-t-lg font-medium text-sm transition-colors duration-200",
             if(@current_tab == "rewards",
-              do: "border-zinc-500 text-zinc-600",
-              else: "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+              do: "bg-zinc-100 text-zinc-800 border-2 border-b-0 border-zinc-200",
+              else: "text-gray-600 hover:text-gray-800 hover:bg-zinc-50"
             )
           ]}
         >
-          Rewards
+          <.icon name="hero-gift-solid" class="w-5 h-5" /> Rewards
         </button>
       </nav>
     </div>
