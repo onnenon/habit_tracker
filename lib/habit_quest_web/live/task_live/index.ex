@@ -13,11 +13,21 @@ defmodule HabitQuestWeb.TaskLive.Index do
     {:ok,
      socket
      |> stream(:tasks, tasks)
-     |> assign(:children, children)}
+     |> assign(:children, children)
+     |> assign(:selected_tab, "habits")}
   end
 
   @impl true
   def handle_params(params, _url, socket) do
+    tab = Map.get(params, "tab", "habits")
+    tasks = list_tasks()
+    filtered_tasks = filter_tasks(tasks, tab)
+
+    socket =
+      socket
+      |> assign(:selected_tab, tab)
+      |> stream(:tasks, filtered_tasks, reset: true)
+
     {:noreply, apply_action(socket, socket.assigns.live_action, params)}
   end
 
@@ -34,8 +44,10 @@ defmodule HabitQuestWeb.TaskLive.Index do
   end
 
   defp apply_action(socket, :edit, %{"id" => id}) do
-    task = Tasks.get_task!(id)
-    |> HabitQuest.Repo.preload(:children)  # Ensure children are preloaded
+    task =
+      Tasks.get_task!(id)
+      # Ensure children are preloaded
+      |> HabitQuest.Repo.preload(:children)
 
     socket
     |> assign(:page_title, "Edit Habit")
@@ -47,16 +59,18 @@ defmodule HabitQuestWeb.TaskLive.Index do
     task = Tasks.get_task!(id)
     {:ok, _} = Tasks.delete_task(task)
 
-    # Refresh the entire tasks list to ensure we have the latest state
+    # Refresh tasks with current filter
     tasks = list_tasks()
-    {:noreply, stream(socket, :tasks, tasks, reset: true)}
+    filtered_tasks = filter_tasks(tasks, socket.assigns.selected_tab)
+    {:noreply, stream(socket, :tasks, filtered_tasks, reset: true)}
   end
 
   @impl true
   def handle_info({HabitQuestWeb.TaskLive.FormComponent, {:saved, _task}}, socket) do
-    # Refresh the entire tasks list to ensure we have the latest state
+    # Refresh tasks with current filter
     tasks = list_tasks()
-    {:noreply, stream(socket, :tasks, tasks, reset: true)}
+    filtered_tasks = filter_tasks(tasks, socket.assigns.selected_tab)
+    {:noreply, stream(socket, :tasks, filtered_tasks, reset: true)}
   end
 
   defp list_tasks do
@@ -66,4 +80,14 @@ defmodule HabitQuestWeb.TaskLive.Index do
   defp list_children do
     Children.list_children()
   end
+
+  defp filter_tasks(tasks, "one-off") do
+    Enum.filter(tasks, fn task -> task.task_type == "one_off" end)
+  end
+
+  defp filter_tasks(tasks, "habits") do
+    Enum.filter(tasks, fn task -> task.task_type in ["weekly", "punch_card"] end)
+  end
+
+  defp filter_tasks(tasks, _), do: tasks
 end
