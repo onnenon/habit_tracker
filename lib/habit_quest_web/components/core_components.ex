@@ -475,36 +475,49 @@ defmodule HabitQuestWeb.CoreComponents do
 
     ~H"""
     <div class="overflow-y-auto px-4 sm:overflow-visible sm:px-0">
-      <table class="w-[40rem] mt-11 sm:w-full">
+      <table class="w-full mt-11 border-collapse table-auto">
         <thead class="text-sm text-left leading-6 text-zinc-500">
           <tr>
             <th :for={col <- @col} class={["p-0 pb-4 pr-6 font-normal", col[:class]]}>
-              <%= col[:label] %>
+              {col[:label]}
             </th>
-            <th class="relative p-0 pb-4"><span class="sr-only"><%= gettext("Actions") %></span></th>
+            <th :if={@action != []} class="relative p-0 pb-4">
+              <span class="sr-only">{gettext("Actions")}</span>
+            </th>
           </tr>
         </thead>
         <tbody class="relative divide-y divide-zinc-100 border-t border-zinc-200 text-sm leading-6 text-zinc-700">
-          <tr :for={row <- @rows} id={@row_id && @row_id.(row)} class="group hover:bg-zinc-50">
+          <tr
+            :for={row <- @rows}
+            id={@row_id && @row_id.(row)}
+            class="group hover:bg-zinc-50/70 transition duration-150"
+          >
             <td
               :for={{col, i} <- Enum.with_index(@col)}
               phx-click={@row_click && @row_click.(row)}
-              class={["relative p-0", [@row_click && "hover:cursor-pointer"]]}
+              class={["p-4", @row_click && "hover:cursor-pointer"]}
             >
-              <div class={["block py-4 pr-6", i == 0 && "font-semibold text-zinc-900", col[:class]]}>
-                <%= render_slot(col, @row_item.(row)) %>
+              <div class={["block", i == 0 && "font-semibold text-zinc-900", col[:class]]}>
+                {render_slot(col, @row_item.(row))}
               </div>
             </td>
-            <td :if={@action != []} class="relative w-14 p-0">
-              <div class="relative whitespace-nowrap py-4 text-right text-sm font-medium">
-                <span class="absolute -inset-y-px -right-4 left-0 group-hover:bg-zinc-50 sm:rounded-r-xl" />
+            <td :if={@action != []} class="p-4 text-right">
+              <div class="relative inline-flex items-center justify-end gap-2">
                 <span
                   :for={action <- @action}
-                  class="relative ml-4 font-semibold leading-6 text-zinc-900 hover:text-zinc-700"
+                  class="relative font-semibold text-zinc-900 hover:text-zinc-700"
                 >
-                  <%= render_slot(action, @row_item.(row)) %>
+                  {render_slot(action, @row_item.(row))}
                 </span>
               </div>
+            </td>
+          </tr>
+          <tr :if={@rows == []} class="hover:bg-zinc-50/70">
+            <td
+              colspan={length(@col) + if(@action != [], do: 1, else: 0)}
+              class="p-4 text-center text-zinc-500 italic"
+            >
+              No items to display
             </td>
           </tr>
         </tbody>
