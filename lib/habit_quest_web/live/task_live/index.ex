@@ -9,10 +9,10 @@ defmodule HabitQuestWeb.TaskLive.Index do
   def mount(_params, _session, socket) do
     {:ok,
      socket
-     |> stream(:completed_tasks, [])
-     |> stream(:incomplete_tasks, [])
+     |> stream(:tasks, [])
      |> assign(:children, list_children())
-     |> assign(:selected_tab, "habits")}
+     |> assign(:selected_tab, "habits")
+     |> assign(:show_completed_tasks, false)}
   end
 
   @impl true
@@ -60,6 +60,14 @@ defmodule HabitQuestWeb.TaskLive.Index do
   end
 
   @impl true
+  def handle_event("toggle-completed", _, socket) do
+    {:noreply,
+     socket
+     |> assign(:show_completed_tasks, !socket.assigns.show_completed_tasks)
+     |> handle_task_grouping(list_tasks_with_completions(), socket.assigns.selected_tab)}
+  end
+
+  @impl true
   def handle_info({HabitQuestWeb.TaskLive.FormComponent, {:saved, _task}}, socket) do
     tasks = list_tasks_with_completions()
     {:noreply, handle_task_grouping(socket, tasks, socket.assigns.selected_tab)}
@@ -88,17 +96,22 @@ defmodule HabitQuestWeb.TaskLive.Index do
         children_count > 0 && completions_count == children_count
       end)
 
+    visible_tasks =
+      if socket.assigns.show_completed_tasks do
+        incomplete ++ completed
+      else
+        incomplete
+      end
+
     socket
-    |> stream(:completed_tasks, completed, reset: true)
-    |> stream(:incomplete_tasks, incomplete, reset: true)
+    |> stream(:tasks, visible_tasks, reset: true)
   end
 
   defp handle_task_grouping(socket, tasks, "habits") do
     habit_tasks = Enum.filter(tasks, fn task -> task.task_type in ["weekly", "punch_card"] end)
 
     socket
-    |> stream(:incomplete_tasks, habit_tasks, reset: true)
-    |> stream(:completed_tasks, [], reset: true)
+    |> stream(:tasks, habit_tasks, reset: true)
   end
 
   defp handle_task_grouping(socket, _tasks, _), do: socket

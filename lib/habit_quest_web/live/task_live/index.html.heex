@@ -26,105 +26,63 @@
   </div>
 </div>
 
-<div :if={@selected_tab == "one-off" && @streams.incomplete_tasks != []}>
-  <h3 class="text-base font-semibold leading-6 text-gray-900 mb-4">Tasks In Progress</h3>
-  <.table
-    id="incomplete-tasks"
-    rows={@streams.incomplete_tasks}
-    row_click={fn {_id, task} -> JS.navigate(~p"/tasks/#{task}/edit") end}
-  >
-    <:col :let={{_id, task}} label="Title">{task.title}</:col>
-    <:col :let={{_id, task}} label="Description">{task.description}</:col>
-    <:col :let={{_id, task}} label="Points">{task.points}</:col>
-    <:col :let={{_id, task}} label="Completed By">
-      <div class="text-sm">
-        <span class="font-medium">{length(task.one_off_task_completions)}</span>
-        of <span class="font-medium">{length(task.children)}</span>
-        children
-        <div class="text-xs text-gray-500 mt-1">
-          <%= if length(task.one_off_task_completions) > 0 do %>
-            Completed by: {task.one_off_task_completions |> Enum.map_join(", ", & &1.child.name)}
-          <% end %>
-        </div>
-      </div>
-    </:col>
-    <:action :let={{_id, task}}>
-      <div class="sr-only">
-        <.link navigate={~p"/tasks/#{task}"}>Show</.link>
-      </div>
-      <.link navigate={~p"/tasks/#{task}/edit"}>Edit</.link>
-    </:action>
-    <:action :let={{id, task}}>
-      <.link
-        phx-click={JS.push("delete", value: %{id: task.id}) |> hide("##{id}")}
-        data-confirm="Are you sure?"
+<div :if={@selected_tab == "one-off"} class="flex justify-end mb-4">
+  <div class="flex items-center space-x-2">
+    <label class="text-sm text-gray-600">Show completed tasks</label>
+    <button
+      type="button"
+      phx-click="toggle-completed"
+      class={"relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary-600 focus:ring-offset-2 #{if @show_completed_tasks, do: "bg-primary-600", else: "bg-gray-200"}"}
+      role="switch"
+      aria-checked={@show_completed_tasks}
+    >
+      <span
+        aria-hidden="true"
+        class={"pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out #{if @show_completed_tasks, do: "translate-x-5", else: "translate-x-0"}"}
       >
-        Delete
-      </.link>
-    </:action>
-  </.table>
-</div>
-
-<div :if={@selected_tab == "one-off" && @streams.completed_tasks != []}>
-  <h3 class="text-base font-semibold leading-6 text-gray-900 mb-4 mt-8">Completed Tasks</h3>
-  <.table
-    id="completed-tasks"
-    rows={@streams.completed_tasks}
-    row_click={fn {_id, task} -> JS.navigate(~p"/tasks/#{task}/edit") end}
-  >
-    <:col :let={{_id, task}} label="Title">{task.title}</:col>
-    <:col :let={{_id, task}} label="Description">{task.description}</:col>
-    <:col :let={{_id, task}} label="Points">{task.points}</:col>
-    <:col :let={{_id, _task}} label="Status">
-      <span class="inline-flex items-center rounded-md bg-green-50 px-2 py-1 text-xs font-medium text-green-700 ring-1 ring-inset ring-green-600/20">
-        Completed by all
       </span>
-    </:col>
-    <:action :let={{_id, task}}>
-      <div class="sr-only">
-        <.link navigate={~p"/tasks/#{task}"}>Show</.link>
-      </div>
-      <.link navigate={~p"/tasks/#{task}/edit"}>Edit</.link>
-    </:action>
-    <:action :let={{id, task}}>
-      <.link
-        phx-click={JS.push("delete", value: %{id: task.id}) |> hide("##{id}")}
-        data-confirm="Are you sure?"
-      >
-        Delete
-      </.link>
-    </:action>
-  </.table>
+    </button>
+  </div>
 </div>
 
-<div :if={@selected_tab == "habits"}>
-  <.table
-    id="tasks"
-    rows={@streams.incomplete_tasks}
-    row_click={fn {_id, task} -> JS.navigate(~p"/tasks/#{task}/edit") end}
-  >
-    <:col :let={{_id, task}} label="Title">{task.title}</:col>
-    <:col :let={{_id, task}} label="Description">{task.description}</:col>
-    <:col :let={{_id, task}} label="Points">{task.points}</:col>
-    <:col :let={{_id, task}} label="Type">
-      {String.replace(task.task_type, "_", " ") |> String.capitalize()}
-    </:col>
-    <:action :let={{_id, task}}>
-      <div class="sr-only">
-        <.link navigate={~p"/tasks/#{task}"}>Show</.link>
+<.table
+  id="tasks"
+  rows={@streams.tasks}
+  row_click={fn {_id, task} -> JS.navigate(~p"/tasks/#{task}/edit") end}
+>
+  <:col :let={{_id, task}} label="Title">{task.title}</:col>
+  <:col :let={{_id, task}} label="Description">{task.description}</:col>
+  <:col :let={{_id, task}} label="Points">{task.points}</:col>
+  <:col :let={{_id, task}} label="Type">
+    {String.replace(task.task_type, "_", " ") |> String.capitalize()}
+  </:col>
+  <:col :let={{_id, task}} :if={@selected_tab == "one-off"} label="Completed By">
+    <div class="text-sm">
+      <span class="font-medium">{length(task.one_off_task_completions)}</span>
+      of <span class="font-medium">{length(task.children)}</span>
+      children
+      <div class="text-xs text-gray-500 mt-1">
+        <%= if length(task.one_off_task_completions) > 0 do %>
+          Completed by: {task.one_off_task_completions |> Enum.map_join(", ", & &1.child.name)}
+        <% end %>
       </div>
-      <.link navigate={~p"/tasks/#{task}/edit"}>Edit</.link>
-    </:action>
-    <:action :let={{id, task}}>
-      <.link
-        phx-click={JS.push("delete", value: %{id: task.id}) |> hide("##{id}")}
-        data-confirm="Are you sure?"
-      >
-        Delete
-      </.link>
-    </:action>
-  </.table>
-</div>
+    </div>
+  </:col>
+  <:action :let={{_id, task}}>
+    <div class="sr-only">
+      <.link navigate={~p"/tasks/#{task}"}>Show</.link>
+    </div>
+    <.link navigate={~p"/tasks/#{task}/edit"}>Edit</.link>
+  </:action>
+  <:action :let={{id, task}}>
+    <.link
+      phx-click={JS.push("delete", value: %{id: task.id}) |> hide("##{id}")}
+      data-confirm="Are you sure?"
+    >
+      Delete
+    </.link>
+  </:action>
+</.table>
 
 <.modal :if={@live_action in [:new, :edit]} id="task-modal" show on_cancel={JS.patch(~p"/tasks")}>
   <.live_component
