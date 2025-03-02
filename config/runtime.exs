@@ -60,7 +60,7 @@ if config_env() == :prod do
 
   host = env!("PHX_HOST", :string) || "example.com"
 
-  config :habit_quest, :dns_cluster_query, env!("DNS_CLUSTER_QUERY", :string)
+  config :habit_quest, :dns_cluster_query, System.get_env("DNS_CLUSTER_QUERY")
 
   config :habit_quest, HabitQuestWeb.Endpoint,
     url: [host: host, port: 443, scheme: "https"],
