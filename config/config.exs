@@ -7,6 +7,9 @@
 # General application configuration
 import Config
 
+# Load environment variables from .env file
+Dotenvy.source([".env", ".env.#{config_env()}"])
+
 config :habit_quest,
   ecto_repos: [HabitQuest.Repo],
   generators: [timestamp_type: :utc_datetime]

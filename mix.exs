@@ -82,13 +82,7 @@ defmodule HabitQuest.MixProject do
         "tailwind habit_quest --minify",
         "esbuild habit_quest --minify",
         "phx.digest"
-      ],
-      "server.prod": ["assets.deploy", &load_env_and_run_prod_server/1]
+      ]
     ]
-  end
-
-  defp load_env_and_run_prod_server(_) do
-    Dotenvy.source([".env", ".env.prod"])
-    Mix.Task.run("phx.server")
   end
 end
