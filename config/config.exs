@@ -6,9 +6,15 @@
 
 # General application configuration
 import Config
+import Dotenvy
 
-# Load environment variables from .env file
-Dotenvy.source([".env", ".env.#{config_env()}"])
+env_dir_prefix = System.get_env("RELEASE_ROOT") || Path.expand("./envs/")
+
+source!([
+  Path.absname(".env", env_dir_prefix),
+  Path.absname(".#{config_env()}.overrides.env", env_dir_prefix),
+  System.get_env()
+])
 
 config :habit_quest,
   ecto_repos: [HabitQuest.Repo],
