@@ -88,7 +88,7 @@ defmodule HabitQuest.MixProject do
   end
 
   defp load_env_and_run_prod_server(_) do
-    Dotenvy.source()
+    Dotenvy.source([".env", ".env.prod"])
     Mix.Task.run("phx.server")
   end
 end
