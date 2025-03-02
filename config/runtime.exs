@@ -31,18 +31,19 @@ if env!("PHX_SERVER") do
 end
 
 if config_env() == :prod do
-  database_url =
-    env!("DATABASE_URL") ||
-      raise """
-      environment variable DATABASE_URL is missing.
-      For example: ecto://USER:PASS@HOST/DATABASE
-      """
+  DB_PATH = env!("DB_PATH", :string!)
+  # database_url =
+  #   env!("DATABASE_URL") ||
+  #     raise """
+  #     environment variable DATABASE_URL is missing.
+  #     For example: ecto://USER:PASS@HOST/DATABASE
+  #     """
 
   maybe_ipv6 = if env!("ECTO_IPV6") in ~w(true 1), do: [:inet6], else: []
 
   config :habit_quest, HabitQuest.Repo,
     # ssl: true,
-    url: database_url,
+    database: DB_PATH,
     pool_size: String.to_integer(env!("POOL_SIZE", :string) || "10"),
     socket_options: maybe_ipv6
 
