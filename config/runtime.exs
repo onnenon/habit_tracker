@@ -31,7 +31,7 @@ if env!("PHX_SERVER") do
 end
 
 if config_env() == :prod do
-  DB_PATH = env!("DB_PATH", :string!)
+  db_path = Path.expand(env!("DB_PATH", :string!))
   # database_url =
   #   env!("DATABASE_URL") ||
   #     raise """
@@ -43,7 +43,7 @@ if config_env() == :prod do
 
   config :habit_quest, HabitQuest.Repo,
     # ssl: true,
-    database: DB_PATH,
+    database: db_path,
     pool_size: String.to_integer(env!("POOL_SIZE", :string) || "10"),
     socket_options: maybe_ipv6
 
