@@ -3,12 +3,23 @@ import Dotenvy
 
 env_dir_prefix = System.get_env("RELEASE_ROOT") || Path.expand("./envs/")
 
+IO.puts("Looking for env files in: #{env_dir_prefix}")
+IO.puts(".env path: #{Path.absname(".env", env_dir_prefix)}")
+IO.puts(".#{config_env()}.env path: #{Path.absname(".#{config_env()}.env", env_dir_prefix)}")
+IO.puts(".#{config_env()}.overrides.env path: #{Path.absname(".#{config_env()}.overrides.env", env_dir_prefix)}")
+
+IO.puts("\nCurrent environment variables before Dotenvy:")
+System.get_env() |> Enum.sort() |> Enum.each(fn {k, v} -> IO.puts("#{k}=#{v}") end)
+
 source!([
   Path.absname(".env", env_dir_prefix),
   Path.absname(".#{config_env()}.env", env_dir_prefix),
   Path.absname(".#{config_env()}.overrides.env", env_dir_prefix),
   System.get_env()
 ])
+
+IO.puts("\nEnvironment variables after Dotenvy:")
+System.get_env() |> Enum.sort() |> Enum.each(fn {k, v} -> IO.puts("#{k}=#{v}") end)
 
 # config/runtime.exs is executed for all environments, including
 # during releases. It is executed after compilation and before the
